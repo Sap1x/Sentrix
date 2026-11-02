@@ -95,3 +95,4 @@ flowchart TD
 - **Untrusted Model Output:** AI outputs are treated as untrusted text; never passed into SQL, `eval()`, shell executors, or code dispatchers.
 - **CORS & Rate Limiting:** Enforced at FastAPI gateway level.
 - **Audit Trails:** Every decision brief generates an RFC-3339 timestamped audit record requiring explicit human operator validation sign-off.
+

@@ -152,3 +152,4 @@ export const ScenarioLab: React.FC<ScenarioLabProps> = ({
     </div>
   );
 };
+

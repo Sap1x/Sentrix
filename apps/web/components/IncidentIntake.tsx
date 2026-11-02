@@ -168,3 +168,4 @@ export const IncidentIntake: React.FC<IncidentIntakeProps> = ({
     </div>
   );
 };
+

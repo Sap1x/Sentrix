@@ -2,8 +2,10 @@
 .env
 .env.*
 !.env.example
+!.env.template
 *.pem
 *.key
+*.log
 
 # Python
 __pycache__/
@@ -58,3 +60,4 @@ Thumbs.db
 *~
 .idea/
 .vscode/
+

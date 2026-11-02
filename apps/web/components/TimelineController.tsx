@@ -170,3 +170,4 @@ export const TimelineController: React.FC<TimelineControllerProps> = ({
     </div>
   );
 };
+

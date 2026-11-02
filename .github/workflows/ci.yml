@@ -56,3 +56,4 @@ jobs:
       - name: Build Next.js Application
         working-directory: apps/web
         run: npm run build
+

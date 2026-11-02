@@ -402,3 +402,4 @@ export const InfrastructureMap: React.FC<InfrastructureMapProps> = ({
     </div>
   );
 };
+

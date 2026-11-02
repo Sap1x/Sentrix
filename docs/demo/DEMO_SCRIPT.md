@@ -70,3 +70,4 @@
 > With one click, the operator generates an audit-ready **Decision Brief**, reviewed by human command before any real-world resource is deployed.
 >
 > **SENTRIX — See the cascade before it happens.** Thank you."
+

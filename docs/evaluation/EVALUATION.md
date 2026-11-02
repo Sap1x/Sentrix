@@ -47,3 +47,4 @@ The engine evaluated the robustness of the ranking order under hydraulic uncerta
 - **Reasoning Tokens Generated:** ~250 tokens per incident analysis.
 - **Simulation Execution Latency:** <0.7 milliseconds (NetworkX graph solver).
 - **Zero Hallucination Guarantee:** AI model only outputs qualitative hypotheses and causal explanations; all numbers originate from the Python simulation engine.
+

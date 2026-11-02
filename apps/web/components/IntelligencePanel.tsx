@@ -248,3 +248,4 @@ export const IntelligencePanel: React.FC<IntelligencePanelProps> = ({
     </div>
   );
 };
+

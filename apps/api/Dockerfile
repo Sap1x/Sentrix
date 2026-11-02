@@ -19,3 +19,4 @@ COPY apps/api/sentrix /app/sentrix
 EXPOSE 8000
 
 CMD ["uvicorn", "sentrix.main:app", "--host", "0.0.0.0", "--port", "8000"]
+

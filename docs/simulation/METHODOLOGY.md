@@ -88,3 +88,4 @@ Subject to: $\sum_{m=1}^6 w_m = 1.0$
 | Access Delay Reduction | Minimize ambulance transit delay | $0.10$ | $(\Delta \tau_{\text{base}} - \Delta \tau_k) / \Delta \tau_{\text{base}}$ |
 | Deployment Feasibility | Minimize logistical failure risk | $0.05$ | $\max(0.3, 1.0 - \text{cost}_k / 15.0)$ |
 | Resource Cost Proxy | Maximize resource efficiency | $0.05$ | $\max(0.2, 1.0 - \text{cost}_k / 10.0)$ |
+

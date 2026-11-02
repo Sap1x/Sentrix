@@ -90,3 +90,4 @@ def test_decision_brief():
     assert "brief_id" in data
     assert "executive_summary" in data
     assert data["operator_signoff_required"] is True
+

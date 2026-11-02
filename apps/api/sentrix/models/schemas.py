@@ -219,3 +219,4 @@ class SystemHealthResponse(BaseModel):
     uptime_seconds: float
     total_simulations_run: int
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
