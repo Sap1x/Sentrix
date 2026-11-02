@@ -1,0 +1,129 @@
+{
+  "id": "scenario-flood-central-2026",
+  "title": "Riverside Flash Flood & Storm Surge — Grand Avenue Corridor",
+  "category": "URBAN_FLASH_FLOOD",
+  "severity": "CRITICAL",
+  "epicenter": [40.7150, -74.0090],
+  "radius_meters": 1400.0,
+  "flood_depth_cm": 65.0,
+  "progression_rate_cm_per_hour": 14.0,
+  "description": "Intense torrential rainfall (85mm in 90 minutes) combined with an upstream river surge. Floodwaters are inundating low-lying road corridors and threatening critical power and water lifelines feeding St. Jude Level-1 Trauma Center.",
+  "evidence": [
+    {
+      "id": "evid-sensor-01",
+      "source": "USGS Streamflow & Storm Drain Gauge #4071",
+      "text_content": "Grand Ave Underpass gauge reporting water level at 52cm and rising at 14cm/hr. Inundation alarm triggered.",
+      "sensor_reading_cm": 52.0,
+      "confidence": 0.98
+    },
+    {
+      "id": "evid-ems-report-02",
+      "source": "Metro EMS Paramedic Unit 4B Radio Report",
+      "text_content": "Grand Avenue Underpass impassable. Water depth estimated >45cm with submerged stalled vehicles. Attempting detour via Market Street.",
+      "sensor_reading_cm": 45.0,
+      "confidence": 0.94
+    },
+    {
+      "id": "evid-grid-telemetry-03",
+      "source": "Metropolis Power SCADA Feeder Alert",
+      "text_content": "Substation North-01 basement water intrusion sensors alarmed at 28cm. Critical transformer trip threshold is 30cm.",
+      "sensor_reading_cm": 28.0,
+      "confidence": 0.99
+    }
+  ],
+  "interventions": [
+    {
+      "id": "scen-baseline",
+      "name": "No Intervention (Baseline Progression)",
+      "category": "BASELINE",
+      "description": "Standard reactive protocol without proactive resource deployment or tactical routing. Uncontrolled cascading propagation through urban lifeline dependencies.",
+      "actions": []
+    },
+    {
+      "id": "scen-road-diversion",
+      "name": "Intervention A: Northway Ridge Traffic Diversion & Emergency Corridor",
+      "category": "TRAFFIC_REROUTE",
+      "description": "Deploy traffic police and dynamic signage at 4th Ave Bridge to seal Grand Underpass before civilian vehicles stall. Establish priority emergency transit corridor along elevated Northway Ridge.",
+      "actions": [
+        {
+          "id": "act-diversion-01",
+          "name": "Seal Grand Underpass & Establish Ridge Corridor",
+          "target_asset_ids": ["junction-grand-underpass", "junction-northway-ridge"],
+          "action_type": "ROAD_DIVERSION",
+          "deployment_delay_hours": 0.3,
+          "cost_index": 2.5,
+          "parameters": {
+            "reroute_via": "junction-northway-ridge",
+            "capacity_reservation_pct": 80.0
+          },
+          "description": "Reroutes all emergency ambulances along high-elevation ridge (16.5m elevation)."
+        }
+      ]
+    },
+    {
+      "id": "scen-substation-barrier",
+      "name": "Intervention B: Substation North Rapid Flood Barrier & High-Capacity Dewatering",
+      "category": "CRITICAL_ASSET_PROTECTION",
+      "description": "Dispatch emergency public works strike team to deploy inflatable Tiger Dam flood barrier (1.2m crest) and 2x 750 gpm mobile dewatering pumps at Substation North-01.",
+      "actions": [
+        {
+          "id": "act-barrier-01",
+          "name": "Deploy Tiger Dam Barrier at Substation North",
+          "target_asset_ids": ["substation-north-01"],
+          "action_type": "FLOOD_BARRIER",
+          "deployment_delay_hours": 0.6,
+          "cost_index": 4.5,
+          "parameters": {
+            "effective_barrier_protection_cm": 90.0,
+            "pump_capacity_gpm": 1500
+          },
+          "description": "Guarantees electrical grid continuity for St. Jude Trauma Center and Rivergate Pumping Station."
+        }
+      ]
+    },
+    {
+      "id": "scen-combined-mitigation",
+      "name": "Intervention C: Multi-Vector Resilient Response (Combined Mitigation)",
+      "category": "COMBINED_MITIGATION",
+      "description": "Synchronized tactical intervention combining Northway Ridge emergency corridor, Substation North flood barrier deployment, and pre-positioning a mobile auxiliary generator at Rivergate Pumping Station.",
+      "actions": [
+        {
+          "id": "act-combined-corridor",
+          "name": "Northway Ridge Emergency Corridor",
+          "target_asset_ids": ["junction-grand-underpass", "junction-northway-ridge"],
+          "action_type": "ROAD_DIVERSION",
+          "deployment_delay_hours": 0.3,
+          "cost_index": 2.5,
+          "parameters": {
+            "reroute_via": "junction-northway-ridge"
+          },
+          "description": "Maintains rapid ambulance transit throughout event."
+        },
+        {
+          "id": "act-combined-substation",
+          "name": "Substation North Hesco/Tiger Barrier Protection",
+          "target_asset_ids": ["substation-north-01"],
+          "action_type": "FLOOD_BARRIER",
+          "deployment_delay_hours": 0.6,
+          "cost_index": 4.5,
+          "parameters": {
+            "effective_barrier_protection_cm": 90.0
+          },
+          "description": "Maintains primary grid power."
+        },
+        {
+          "id": "act-combined-aux-pump",
+          "name": "Auxiliary Mobile Generator to Rivergate Pumping Station",
+          "target_asset_ids": ["water-pumping-01"],
+          "action_type": "BACKUP_DEPLOYMENT",
+          "deployment_delay_hours": 0.8,
+          "cost_index": 3.0,
+          "parameters": {
+            "backup_power_hours_added": 8.0
+          },
+          "description": "Preserves water service pressure for hospital sterilization and fire readiness."
+        }
+      ]
+    }
+  ]
+}
