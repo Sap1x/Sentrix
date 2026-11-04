@@ -30,7 +30,7 @@
 > 
 > Rather than relying on rigid rule-based alerts, we feed raw evidence into **Meta's new Muse Spark Open model** via Baseten.
 >
-> Notice what Muse Spark Open does: it doesn't just read the flood depth—it extracts structured risk hypotheses and chain-of-thought causal paths. It recognizes that while Grand Underpass is physically inundated, the real catastrophic risk is that Substation North-01 is approaching its 30-centimeter electrical trip limit, which will cut power to St. Jude Trauma Center and Rivergate Water Pumping Station."
+> Notice what Muse Spark Open does: it doesn't just read the flood depth—it extracts structured risk hypotheses grounded in urban topography. It recognizes that while Grand Underpass is physically inundated, the real catastrophic risk is that Substation North-01 is approaching its 30-centimeter electrical trip limit, which will cut power to St. Jude Trauma Center and Rivergate Water Pumping Station."
 
 ---
 

@@ -50,7 +50,7 @@ SENTRIX bridges the gap between high-level AI reasoning and classical infrastruc
 $$\text{Incident Intake} \longrightarrow \text{Infrastructure Digital Twin} \longrightarrow \text{Deterministic Cascade} \longrightarrow \text{Counterfactual Scenarios} \longrightarrow \text{MCDA Decision}$$
 
 ### Core Platform Capabilities
-1. **Multimodal Incident Understanding:** Ingests sensor data, river streamflow gauges, and paramedic dispatch radio transcripts using Meta's **Muse Spark Open** via Baseten with full chain-of-thought reasoning disclosure.
+1. **Multimodal Incident Understanding:** Ingests sensor data, river streamflow gauges, and paramedic dispatch radio transcripts using Meta's **Muse Spark Open** via Baseten with evidence-grounded risk extraction and operational summaries.
 2. **Infrastructure Digital Twin:** Models physical connectivity (road links, bridges) and directed functional lifelines (power grid feeds, water pressure, communications) across 14 assets and 16 lifelines.
 3. **Deterministic Cascading-Failure Engine:** Discrete-time simulation engine (implemented in NetworkX) executing hydraulic flood spread, component inundation, backup generator depletion, cycle-safe cascade propagation, and Dijkstra shortest-path transit rerouting.
 4. **Dynamic Parametric Calibration:** Operators can adjust initial flood surge depth (30–120cm), progression rate (5–30cm/hr), and surge radius (800–2500m) in real time to simulate evolving storm conditions.
@@ -84,7 +84,7 @@ Meta Muse Spark Open       NetworkX Mixed Graph Twin       Decision Brief Servic
  (Baseten Inference)       (Hydraulic & Dijkstra Paths)     (Human Sign-off Audit)
 ```
 
-- **Meta Model Responsibilities:** Incident understanding, structured hazard extraction, reasoning disclosure, and qualitative operational briefing grounded in actual simulation outputs.
+- **Meta Model Responsibilities:** Incident understanding, structured hazard extraction, operational synthesis, and qualitative briefing grounded in actual simulation outputs.
 - **Simulation Engine Responsibilities:** Inundation depth, component failure states, backup fuel depletion hours, Dijkstra shortest-path transit delay, and impact scoring.
 
 ---
@@ -121,7 +121,7 @@ SENTRIX natively integrates Meta's flagship model:
   - `risk_hypotheses`: Causal failure predictions.
   - `plausible_cascades`: High-probability propagation vectors.
   - `uncertainty_indicators`: Information gaps requiring sensor verification.
-  - `reasoning_summary`: Disclosed chain-of-thought trace.
+  - `reasoning_summary`: Operational rationale summary grounded in topology.
 - **Graceful Degradation:** When Baseten is offline or rate-limited, the system falls back to a deterministic rule-grounded engine, explicitly labeled as `VERIFIED_DETERMINISTIC_ENGINE`. When live, outputs carry the verified provenance `LIVE_META_MUSE_SPARK_OPEN`.
 
 ---

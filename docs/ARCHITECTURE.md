@@ -120,3 +120,4 @@ flowchart TD
 | `/api/v1/intelligence/analyze` | `POST` | Multimodal incident intake reasoning via Meta Muse Spark Open |
 | `/api/v1/intelligence/explain` | `POST` | Operational explanation and trade-off analysis |
 | `/api/v1/decision-brief` | `POST` | Generate RFC-3339 audit decision brief for Incident Commander |
+

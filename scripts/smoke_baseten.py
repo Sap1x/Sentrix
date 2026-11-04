@@ -1,13 +1,22 @@
 """
 SENTRIX — Meta Muse Spark Open Inference Verification
 Performs a safe, structured verification against the Baseten endpoint.
+Validates HTTP response, JSON output, and Pydantic schema without exposing credentials or internal reasoning traces.
 """
 import os
 import sys
+import json
 import httpx
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+class SmokeTestPayload(BaseModel):
+    primary_risk: str = Field(min_length=1)
+    impact: str = Field(min_length=1)
+
 
 api_key = os.getenv("BASETEN_API_KEY")
 base_url = os.getenv("BASETEN_BASE_URL", "https://inference.baseten.co/v1")
@@ -46,14 +55,29 @@ try:
         if res.status_code == 200:
             data = res.json()
             message = data.get("choices", [{}])[0].get("message", {})
-            content = message.get("content") or ""
-            reasoning = message.get("reasoning_content") or ""
-            print("[PASS] Meta Muse Spark Open responded with 200 OK.")
-            print(f"[REASONING]: {reasoning[:120]}...")
-            print(f"[OUTPUT]: {content[:150]}")
-            sys.exit(0)
+            content = (message.get("content") or "").strip()
+
+            # Strip markdown codeblocks if present
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+
+            try:
+                parsed = json.loads(content)
+                validated = SmokeTestPayload.model_validate(parsed)
+                print("[PASS] Meta Muse Spark Open responded with HTTP 200 OK.")
+                print(f"[PASS] JSON output validated: primary_risk='{validated.primary_risk[:60]}...'")
+                print(f"[PASS] Schema validation succeeded: impact='{validated.impact[:60]}...'")
+                sys.exit(0)
+            except Exception as parse_err:
+                print(f"[FAIL] JSON parsing / schema validation failed: {parse_err}")
+                sys.exit(1)
         else:
-            print(f"[FAIL] HTTP {res.status_code}: {res.text[:120]}")
+            print(f"[FAIL] HTTP {res.status_code}")
             sys.exit(1)
 except Exception as e:
     print(f"[ERROR] Connection failed: {type(e).__name__}: {e}")

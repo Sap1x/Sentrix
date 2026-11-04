@@ -2,7 +2,8 @@
 SENTRIX — Intervention Ranking Engine & Sensitivity Analysis
 Evaluates counterfactual simulations using transparent Multi-Criteria Decision Analysis (MCDA).
 """
-from typing import List, Dict, Any, Tuple
+import math
+from typing import List, Dict, Any, Tuple, Optional, Set
 from sentrix.models.schemas import (
     SimulationRunResult,
     ComparativeEvaluation,
@@ -10,25 +11,77 @@ from sentrix.models.schemas import (
     Incident
 )
 
+CANONICAL_WEIGHT_KEYS: Set[str] = {
+    "critical_asset_protection",
+    "impact_reduction",
+    "road_accessibility",
+    "access_delay_reduction",
+    "execution_feasibility",
+    "cost_efficiency",
+}
+
+DEFAULT_WEIGHTS: Dict[str, float] = {
+    "critical_asset_protection": 0.35,
+    "impact_reduction": 0.30,
+    "road_accessibility": 0.15,
+    "access_delay_reduction": 0.10,
+    "execution_feasibility": 0.05,
+    "cost_efficiency": 0.05,
+}
+
+
+def validate_and_normalize_weights(weights: Dict[str, Any]) -> Dict[str, float]:
+    """
+    Validates and normalizes custom MCDA weights.
+    Rejects:
+    - Non-dict types
+    - Unknown keys
+    - Negative weights
+    - NaN and infinite values
+    - All-zero weights (sum <= 0)
+    - Invalid non-numeric types
+    Returns normalized dictionary containing all 6 canonical keys summing strictly to 1.0.
+    """
+    if not isinstance(weights, dict):
+        raise ValueError("custom_weights must be a dictionary")
+
+    unknown_keys = set(weights.keys()) - CANONICAL_WEIGHT_KEYS
+    if unknown_keys:
+        raise ValueError(
+            f"Unknown MCDA weight keys: {sorted(list(unknown_keys))}. "
+            f"Allowed canonical keys: {sorted(list(CANONICAL_WEIGHT_KEYS))}"
+        )
+
+    cleaned: Dict[str, float] = {}
+    for k, v in weights.items():
+        if isinstance(v, bool) or not isinstance(v, (int, float)):
+            raise ValueError(f"Weight for '{k}' must be a numeric value, got {type(v).__name__}")
+        if math.isnan(v) or math.isinf(v):
+            raise ValueError(f"Weight for '{k}' cannot be NaN or infinite")
+        if v < 0.0:
+            raise ValueError(f"Weight for '{k}' cannot be negative, got {v}")
+        cleaned[k] = float(v)
+
+    total_w = sum(cleaned.values())
+    if total_w <= 0.0 or math.isclose(total_w, 0.0, abs_tol=1e-9):
+        raise ValueError("Sum of weights must be strictly positive; all-zero weights are not allowed")
+
+    # Normalize across all 6 canonical keys (missing keys default to 0.0)
+    normalized = {k: cleaned.get(k, 0.0) / total_w for k in CANONICAL_WEIGHT_KEYS}
+    return normalized
+
 
 class InterventionRankingEngine:
     def __init__(self):
-        # Explicit, documented weights summing to 1.0
-        self.weights = {
-            "critical_asset_protection": 0.35,
-            "overall_impact_reduction": 0.30,
-            "road_accessibility": 0.15,
-            "access_delay_reduction": 0.10,
-            "execution_feasibility": 0.05,
-            "cost_efficiency": 0.05,
-        }
+        self.weights = dict(DEFAULT_WEIGHTS)
+        self.canonical_keys = set(CANONICAL_WEIGHT_KEYS)
 
     def evaluate_scenarios(
         self,
         baseline_run: SimulationRunResult,
         candidate_runs: List[Tuple[InterventionScenario, SimulationRunResult]],
-        cost_map: Dict[str, float] = None,
-        custom_weights: Dict[str, float] = None
+        cost_map: Optional[Dict[str, float]] = None,
+        custom_weights: Optional[Dict[str, float]] = None
     ) -> List[ComparativeEvaluation]:
         if cost_map is None:
             cost_map = {
@@ -38,12 +91,10 @@ class InterventionRankingEngine:
                 "scen-combined-mitigation": 7.0,
             }
 
-        active_weights = dict(self.weights)
-        if custom_weights:
-            # Normalize user-supplied weights to sum to 1.0
-            total_w = sum(custom_weights.values())
-            if total_w > 0:
-                active_weights = {k: v / total_w for k, v in custom_weights.items()}
+        if custom_weights is not None:
+            active_weights = validate_and_normalize_weights(custom_weights)
+        else:
+            active_weights = dict(DEFAULT_WEIGHTS)
 
         base_crit = baseline_run.final_metrics.critical_facilities_disrupted
         base_impact = max(1.0, baseline_run.final_metrics.total_weighted_impact)
@@ -89,21 +140,20 @@ class InterventionRankingEngine:
                 delay_score = 1.0
 
             # 5. Feasibility Score
-            # Actions with fewer specialized equipment deployments score higher
             cost_index = cost_map.get(scenario.id, 5.0)
             feasibility_score = max(0.3, 1.0 - (cost_index / 15.0))
 
             # 6. Cost Efficiency Score
             cost_efficiency = max(0.2, 1.0 - (cost_index / 10.0))
 
-            # Weighted Composite Score (0 to 100) using active weights
+            # Weighted Composite Score (0 to 100) using active validated weights
             composite = (
-                active_weights.get("critical_asset_protection", 0.35) * crit_score +
-                active_weights.get("overall_impact_reduction", 0.30) * impact_score_norm +
-                active_weights.get("road_accessibility", 0.15) * road_score +
-                active_weights.get("access_delay_reduction", 0.10) * delay_score +
-                active_weights.get("execution_feasibility", 0.05) * feasibility_score +
-                active_weights.get("cost_efficiency", 0.05) * cost_efficiency
+                active_weights["critical_asset_protection"] * crit_score +
+                active_weights["impact_reduction"] * impact_score_norm +
+                active_weights["road_accessibility"] * road_score +
+                active_weights["access_delay_reduction"] * delay_score +
+                active_weights["execution_feasibility"] * feasibility_score +
+                active_weights["cost_efficiency"] * cost_efficiency
             ) * 100.0
 
             # Determine Rationale

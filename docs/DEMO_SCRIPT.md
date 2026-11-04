@@ -32,7 +32,7 @@
 > 
 > Rather than relying on brittle rule engines, we feed multi-source evidence into **Meta's new Muse Spark Open model** hosted on Baseten.
 >
-> Notice what Muse Spark Open does: it doesn't just read raw flood gauges—it generates chain-of-thought causal hypotheses grounded in urban topography.
+> Notice what Muse Spark Open does: it doesn't just read raw flood gauges—it generates structured causal hypotheses grounded in urban topography.
 >
 > It recognizes that while Grand Underpass is physically flooded, the critical vulnerability is that Substation North-01 sits at elevation 3.2 meters with a 30-centimeter electrical trip limit. If the surge reaches that switchyard, power drops to St. Jude Level-1 Trauma Center and Rivergate Water Pumping Station."
 
@@ -48,10 +48,10 @@
 > An LLM must never hallucinate flood levels or travel times. Our discrete-time NetworkX graph engine computes physical outcomes deterministically.
 >
 > Watch the cascade unfold:
-> - At **T+0h**, Grand Underpass is inundated. The primary 3.5-minute ambulance route is severed. Notice the map dynamically illuminates the emerald green detour route via Northway Ridge, with transit delay jumping to +24.5 minutes.
+> - At **T+0h**, Grand Underpass is inundated. The primary 3.5-minute ambulance route is severed. Notice the map dynamically illuminates the emerald green detour route via Northway Ridge.
 > - At **T+1h**, water at Substation North exceeds 30 centimeters ($W = 36.1\text{cm}$). The grid trips.
 > - At **T+2h**, Rivergate Pumping Station loses power, and St. Jude Trauma Center switches to backup diesel generators with a 2-hour buffer.
-> - At **T+3h**, hospital diesel reserves run dry. ICU operations degrade, surgical bays go offline, and total systemic impact reaches **38.5**."
+> - At **T+3h**, hospital diesel reserves run dry ($0.0\text{h}$ remaining). Surgical and critical facilities degrade, and total systemic impact reaches **24.20**."
 
 ---
 
@@ -68,7 +68,7 @@
 > 3. Substation Flood Barrier alone.
 > 4. And **Combined Mitigation**, which deploys rapid Tiger Dam barriers at Substation North while activating the elevated Northway Ridge emergency corridor.
 >
-> Using transparent Multi-Criteria Decision Analysis (MCDA), SENTRIX ranks Combined Mitigation **#1**, showing a **78.4% reduction in systemic impact**, zero critical facility outages, and ambulance transit stabilized at just +1.8 minutes.
+> Using transparent Multi-Criteria Decision Analysis (MCDA), SENTRIX ranks Combined Mitigation **#1**, showing a **22.1% reduction in systemic impact** (lowering impact from 24.20 to 18.84), preserving electrical grid continuity, and maintaining emergency transit access.
 >
 > Commanders can toggle weighting stances—such as Life-Safety Priority or Rapid Transit—to inspect sensitivity bounds in real time.
 >
@@ -77,3 +77,4 @@
 > Crucially, SENTRIX never autonomously dispatches units—it requires human incident commander sign-off.
 >
 > **SENTRIX — See the cascade before it happens.**"
+

@@ -31,5 +31,5 @@ Base URL: `http://localhost:8000/api/v1`
 
 ### Meta Model Intelligence
 - `POST /intelligence/analyze`: Invokes `meta-models/muse-spark-open` for multimodal hazard assessment and structured risk extraction.
-- `POST /intelligence/explain`: Generates chain-of-thought narrative explanation of simulation trade-offs.
+- `POST /intelligence/explain`: Generates structured operational narrative explanation of simulation trade-offs.
 

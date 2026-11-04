@@ -153,7 +153,7 @@ export const InfrastructureMap: React.FC<InfrastructureMapProps> = ({
             <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
             <span className="font-bold">TRANSIT DETOUR ACTIVE:</span>
             <span className="text-gray-200">
-              Grand Underpass Inundated • Detour via Northway Ridge (+{delayMinutes > 0 ? delayMinutes.toFixed(1) : "24.5"}m delay)
+              Grand Underpass Inundated • Detour via Northway Ridge (+{delayMinutes > 0 ? delayMinutes.toFixed(1) : "2.7"}m delay)
             </span>
           </div>
         ) : (

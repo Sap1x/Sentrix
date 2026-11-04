@@ -217,7 +217,7 @@ export const IntelligencePanel: React.FC<IntelligencePanelProps> = ({
               </div>
             </div>
 
-            {/* Expandable Model Reasoning Trace */}
+            {/* Expandable Model Operational Rationale */}
             <div className="pt-1">
               <button
                 onClick={() => setShowReasoning(!showReasoning)}
@@ -225,7 +225,7 @@ export const IntelligencePanel: React.FC<IntelligencePanelProps> = ({
               >
                 <span className="flex items-center gap-1">
                   <Eye className="w-3 h-3 text-indigo-400" />
-                  Model Reasoning Trace
+                  Operational Rationale Summary
                 </span>
                 {showReasoning ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>

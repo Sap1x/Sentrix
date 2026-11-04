@@ -56,12 +56,12 @@ Execution via `scripts/smoke_baseten.py` targeting Baseten endpoint `https://inf
 
 ```text
 Connecting to verified model: meta-models/muse-spark-open via https://inference.baseten.co/v1
-[PASS] Meta Muse Spark Open responded with 200 OK.
-[REASONING]: Model generated 520 tokens of chain-of-thought analysis in reasoning_content.
-[OUTPUT]: {"primary_risk": "Submerged Grand Avenue severs ambulance access, forcing detours", "impact": "Delayed critical care, increased mortality, and hospital isolation"}
+[PASS] Meta Muse Spark Open responded with HTTP 200 OK.
+[PASS] JSON output validated: primary_risk='Submerged Grand Avenue severs ambulance access...'
+[PASS] Schema validation succeeded: impact='Delayed critical care, increased mortality...'
 ```
 
-**Key Finding:** Muse Spark Open generates extensive reasoning tokens in `reasoning_content` which count against `max_tokens`. SENTRIX configures `max_tokens: 2500` to guarantee uninterrupted JSON payload generation.
+**Key Finding:** Muse Spark Open processes inference requests within token budget ($\le 2500$ tokens). Structured JSON outputs are parsed and defensively validated against Pydantic schemas without exposing internal thinking scratchpads.
 
 ### 3.3 Frontend Compilation & Production Build
 
@@ -88,21 +88,21 @@ Route (app)                              Size     First Load JS
 
 ## 4. Empirical Quantitative Findings
 
-The deterministic simulation engine was evaluated across all four scenarios for the Metropolis Central District flash flood:
+The deterministic simulation engine was evaluated across all four scenarios for the Metropolis Central District flash flood (Initial Surge Depth: 65cm, Rate: 14cm/hr, Horizon: 5h):
 
-| Scenario ID | Scenario Name | Critical Facilities Disrupted | Max Water Depth at Substation | Ambulance Delay Proxy | MCDA Score (0-100) | Net Impact Reduction |
+| Scenario ID | Scenario Name | Critical Facilities Disrupted | Total Impact Score | Ambulance Delay Proxy | MCDA Score (0-100) | Net Impact Reduction |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `scen-baseline` | Baseline Progression (No Action) | 4 facilities (Substation, Pump, Hospital, Clinic) | 54.1 cm (Tripped at $t=1$) | +24.5 min | 21.6 | 0.0% (Reference) |
-| `scen-road-diversion` | Active Traffic Diversion | 4 facilities | 54.1 cm (Tripped at $t=1$) | +3.5 min | 58.2 | +46.8% |
-| `scen-substation-barrier` | Substation Tiger Dam Barrier | 1 facility (Hospital access choked) | 0.0 cm (Protected, 80cm barrier) | +24.5 min | 64.1 | +53.2% |
-| `scen-combined-mitigation` | Combined Barrier & Diversion | **0 facilities** | **0.0 cm (Protected)** | **+1.8 min** | **94.8** | **+78.4%** |
+| `scen-baseline` | Baseline Progression (No Action) | 5 facilities | 24.20 | +4.3 min | 19.0 | 0.0% (Reference) |
+| `scen-road-diversion` | Active Traffic Diversion | 5 facilities | 23.39 | +2.7 min | 21.6 | +3.3% |
+| `scen-substation-barrier` | Substation Tiger Dam Barrier | 4 facilities (Grid protected) | 19.65 | +4.3 min | 27.9 | +18.8% |
+| `scen-combined-mitigation` | Combined Barrier & Diversion | **4 facilities (Grid & access preserved)** | **18.84** | **+2.7 min** | **30.5** | **+22.1% (Rank #1)** |
 
 ### Verified Cascade Progression in Baseline:
-1. **$t=0\text{h}$ (Initial Impact):** Surge begins at Grand Ave Underpass (depth 65cm). Direct access severed. Substation alarm at 27.3cm.
+1. **$t=0\text{h}$ (Initial Impact):** Surge begins at Grand Ave Underpass (depth 59.4cm vs 25cm threshold). Direct underpass access severed. Substation alarm at 27.3cm (< 30cm limit).
 2. **$t=1\text{h}$ (Electrical Trip):** Water at Substation North exceeds 30cm trip limit ($W = 36.1\text{cm}$). Substation fails.
 3. **$t=2\text{h}$ (Functional Cascade):** Loss of grid power trips Rivergate Water Pumping Station. St. Jude Hospital switches to backup diesel generators ($2.0\text{h}$ buffer).
-4. **$t=3\text{h}$ (Critical Exhaustion):** St. Jude diesel reserves exhausted. ICU capacity degraded by 65%.
-5. **$t=4\text{h} - 5\text{h}$ (Systemic Collapse):** Community Pavilion isolated, 4 facilities offline, ambulances forced onto congested 24.5-minute detour.
+4. **$t=3\text{h}$ (Critical Exhaustion):** St. Jude diesel reserves exhausted ($0.0\text{h}$ remaining). ICU capacity degraded.
+5. **$t=4\text{h} - 5\text{h}$ (Systemic Stabilization):** 5 critical facilities offline/degraded, ambulances rerouted with +4.3m transit delay proxy.
 
 ---
 
@@ -114,3 +114,4 @@ The deterministic simulation engine was evaluated across all four scenarios for 
   # .env is strictly ignored and untracked
   ```
 - Verified that `git log -p` across all history contains no API tokens or private keys.
+

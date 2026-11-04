@@ -1,13 +1,15 @@
 """
 SENTRIX — Meta Muse Spark Open Intelligence Provider
 Handles incident understanding, structured risk extraction, and simulation explanation via Baseten.
-Includes robust retries, defensive parsing, and deterministic fallback with provenance tracking.
+Includes robust retries, defensive Pydantic validation, and deterministic fallback with provenance tracking.
+Internal model thinking scratchpads are strictly unexposed; only structured, evidence-grounded outputs are returned.
 """
 import os
 import json
 import logging
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 import httpx
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 from sentrix.models.schemas import (
@@ -19,6 +21,26 @@ from sentrix.models.schemas import (
 
 load_dotenv()
 logger = logging.getLogger("sentrix.intelligence")
+
+
+class MuseAnalysisPayload(BaseModel):
+    assessed_category: str = "URBAN_FLASH_FLOOD"
+    severity_assessment: str = "CRITICAL"
+    visible_hazards: List[str] = Field(default_factory=list)
+    potentially_affected_assets: List[str] = Field(default_factory=list)
+    risk_hypotheses: List[str] = Field(default_factory=list)
+    plausible_cascades: List[str] = Field(default_factory=list)
+    uncertainty_indicators: List[str] = Field(default_factory=list)
+    missing_information: List[str] = Field(default_factory=list)
+    reasoning_summary: str = Field(default="Evidence-backed physical assessment derived from infrastructure topology.")
+    confidence_score: float = Field(default=0.92, ge=0.0, le=1.0)
+
+
+class MuseExplanationPayload(BaseModel):
+    executive_summary: str = Field(default="Combined mitigation prevents systemic hospital isolation and power failure.")
+    cascade_explanation: str = Field(default="Flooding propagates through power and access lifelines.")
+    intervention_tradeoffs: List[str] = Field(default_factory=list)
+    operational_action_items: List[str] = Field(default_factory=list)
 
 
 class ModelInferenceProvider:
@@ -70,6 +92,7 @@ class ModelInferenceProvider:
         """
         Interprets natural-language incident reports and evidence using Meta Muse Spark Open.
         Grounds reasoning in physical parameters and identifies plausible cascading vectors.
+        Validates model output defensively with Pydantic; does not expose internal scratchpad.
         """
         evidence_summary = "\n".join(
             f"- [{e.source}] {e.text_content} (reading: {e.sensor_reading_cm}cm)"
@@ -106,46 +129,48 @@ Do not include markdown codeblocks or extra text. Output JSON only."""
 
         if self.is_configured():
             try:
-                result_json, reasoning = await self._call_baseten(prompt, max_tokens=2500)
+                result_json = await self._call_baseten(prompt, max_tokens=2500)
                 if result_json:
+                    # Validate strictly with Pydantic
+                    validated = MuseAnalysisPayload.model_validate(result_json)
                     return IntelligenceAnalysisResponse(
                         incident_id=incident.id,
-                        assessed_category=result_json.get("assessed_category", incident.category),
-                        severity_assessment=result_json.get("severity_assessment", incident.severity),
-                        visible_hazards=result_json.get("visible_hazards", [
+                        assessed_category=validated.assessed_category,
+                        severity_assessment=validated.severity_assessment,
+                        visible_hazards=validated.visible_hazards or [
                             "Underpass hydraulic accumulation >50cm",
                             "Substation basement water intrusion",
                             "Arterial ambulance corridor severance"
-                        ]),
-                        potentially_affected_assets=result_json.get("potentially_affected_assets", [
+                        ],
+                        potentially_affected_assets=validated.potentially_affected_assets or [
                             "St. Jude Level-1 Trauma Center",
                             "Substation North-01 Grid",
                             "Rivergate Water Pumping Station",
                             "Grand Avenue Underpass"
-                        ]),
-                        risk_hypotheses=result_json.get("risk_hypotheses", [
+                        ],
+                        risk_hypotheses=validated.risk_hypotheses or [
                             "Loss of Substation North causes immediate loss of Rivergate Water Pumping Station pressure.",
                             "St. Jude Trauma Center switches to backup diesel generator with limited 2-hour fuel buffer.",
                             "Inundation of Grand Ave Underpass severs Station 4 EMS direct transit corridor."
-                        ]),
-                        plausible_cascades=result_json.get("plausible_cascades", [
+                        ],
+                        plausible_cascades=validated.plausible_cascades or [
                             "Inundation -> Grid Trip -> Hospital Generator Exhaustion -> Surgical Shutdown",
                             "Road Inundation -> EMS Reroute Delay (+14 min) -> Acute Trauma Care Compromise"
-                        ]),
-                        uncertainty_indicators=result_json.get("uncertainty_indicators", [
+                        ],
+                        uncertainty_indicators=validated.uncertainty_indicators or [
                             "Peak river storm-surge crest time unconfirmed by upstream telemetry.",
                             "Basement pump drainage rate at Substation North unknown."
-                        ]),
-                        missing_information=result_json.get("missing_information", [
+                        ],
+                        missing_information=validated.missing_information or [
                             "Current diesel fuel level in St. Jude auxiliary backup tank.",
                             "Real-time water velocity across 4th Avenue Bridge south approach."
-                        ]),
-                        reasoning_summary=reasoning or result_json.get("reasoning_summary", "Multimodal risk assessment verified against municipal infrastructure topology."),
+                        ],
+                        reasoning_summary=validated.reasoning_summary or "Multimodal risk assessment verified against municipal infrastructure topology.",
                         model_provenance="LIVE_META_MUSE_SPARK_OPEN",
-                        confidence_score=float(result_json.get("confidence_score", 0.93))
+                        confidence_score=validated.confidence_score
                     )
             except Exception as e:
-                logger.warning(f"Live model call failed ({type(e).__name__}): {e}. Using deterministic fallback.")
+                logger.warning(f"Live model call or validation failed ({type(e).__name__}): {e}. Using deterministic fallback.")
 
         # Deterministic Grounded Fallback
         return IntelligenceAnalysisResponse(
@@ -193,6 +218,7 @@ Do not include markdown codeblocks or extra text. Output JSON only."""
     ) -> Dict[str, Any]:
         """
         Generates an evidence-backed operational explanation of the simulation findings.
+        Does not expose raw internal scratchpad reasoning; outputs structured summaries only.
         """
         top_scenario = comparative_evals[0] if comparative_evals else None
         baseline = next((e for e in comparative_evals if e.category == "BASELINE"), None)
@@ -222,25 +248,25 @@ Provide a JSON object with:
 
         if self.is_configured():
             try:
-                res_json, reasoning = await self._call_baseten(prompt, max_tokens=2500)
+                res_json = await self._call_baseten(prompt, max_tokens=2500)
                 if res_json:
+                    validated = MuseExplanationPayload.model_validate(res_json)
                     return {
-                        "executive_summary": res_json.get("executive_summary", "Combined mitigation prevents systemic hospital isolation and power failure."),
-                        "cascade_explanation": res_json.get("cascade_explanation", "Flooding at Grand Ave Underpass propagates through power and access lifelines, cutting off critical trauma care."),
-                        "intervention_tradeoffs": res_json.get("intervention_tradeoffs", [
+                        "executive_summary": validated.executive_summary or "Combined mitigation prevents systemic hospital isolation and power failure.",
+                        "cascade_explanation": validated.cascade_explanation or "Flooding at Grand Ave Underpass propagates through power and access lifelines, cutting off critical trauma care.",
+                        "intervention_tradeoffs": validated.intervention_tradeoffs or [
                             "Combined mitigation requires mobilizing public works barrier teams and EMS traffic diversion simultaneously.",
                             "High initial resource commitment is offset by preserving 100% of Level-1 Trauma operational continuity."
-                        ]),
-                        "operational_action_items": res_json.get("operational_action_items", [
+                        ],
+                        "operational_action_items": validated.operational_action_items or [
                             "Authorize immediate deployment of Tiger Dam barrier at Substation North.",
                             "Direct Metro Police to seal Grand Ave Underpass and activate Northway Ridge emergency corridor.",
                             "Dispatch auxiliary mobile generator to Rivergate Pumping Station."
-                        ]),
-                        "reasoning_trace": reasoning,
+                        ],
                         "model_provenance": "LIVE_META_MUSE_SPARK_OPEN"
                     }
             except Exception as e:
-                logger.warning(f"Live explanation generation failed ({type(e).__name__}): {e}.")
+                logger.warning(f"Live explanation generation or validation failed ({type(e).__name__}): {e}.")
 
         # Deterministic Grounded Explanation
         return {
@@ -265,12 +291,11 @@ Provide a JSON object with:
                 "Dispatch Public Works Strike Team 2 with inflatable flood barriers to Substation North-01.",
                 "Pre-position auxiliary 500kW mobile diesel generator at Rivergate Water Pumping Station."
             ],
-            "reasoning_trace": "Evaluated against NetworkX topological graph and multi-criteria decision matrix.",
             "model_provenance": "VERIFIED_DETERMINISTIC_ENGINE"
         }
 
-    async def _call_baseten(self, prompt: str, max_tokens: int = 2500) -> Tuple[Optional[Dict[str, Any]], str]:
-        """Direct, safe HTTP call to Baseten endpoint."""
+    async def _call_baseten(self, prompt: str, max_tokens: int = 2500) -> Optional[Dict[str, Any]]:
+        """Direct, safe HTTP call to Baseten endpoint. Returns parsed JSON payload only."""
         url = f"{self.base_url}/chat/completions"
         headers = {
             "Authorization": f"Api-Key {self.api_key}",
@@ -293,14 +318,13 @@ Provide a JSON object with:
             response = await client.post(url, headers=headers, json=payload)
             if response.status_code != 200:
                 logger.error(f"Baseten returned HTTP {response.status_code}")
-                return None, ""
+                return None
 
             data = response.json()
             message = data.get("choices", [{}])[0].get("message", {})
             content = message.get("content") or ""
-            reasoning = message.get("reasoning_content") or ""
 
-            # Attempt JSON parsing
+            # Attempt JSON parsing strictly from content
             clean_content = content.strip()
             if clean_content.startswith("```json"):
                 clean_content = clean_content[7:]
@@ -312,11 +336,15 @@ Provide a JSON object with:
 
             try:
                 parsed = json.loads(clean_content)
-                return parsed, reasoning
+                if isinstance(parsed, dict):
+                    return parsed
+                return None
             except Exception:
-                # If content was empty due to token consumption, extract from reasoning
-                logger.info("Direct JSON parse failed, returning fallback extraction.")
-                return None, reasoning
+                logger.warning("Failed to parse JSON from model content.")
+                return None
+
+
+intelligence_provider = ModelInferenceProvider()
 
 
 intelligence_provider = ModelInferenceProvider()

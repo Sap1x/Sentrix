@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from dotenv import load_dotenv
 
 from sentrix.models.schemas import (
@@ -291,6 +291,14 @@ class CompareInterventionsRequest(BaseModel):
     custom_radius_meters: Optional[float] = None
     custom_weights: Optional[Dict[str, float]] = None
 
+    @field_validator("custom_weights")
+    @classmethod
+    def validate_custom_weights(cls, v: Optional[Dict[str, Any]]) -> Optional[Dict[str, float]]:
+        if v is not None:
+            from sentrix.simulation.ranking import validate_and_normalize_weights
+            return validate_and_normalize_weights(v)
+        return v
+
 
 @app.post("/api/v1/interventions/compare", response_model=List[ComparativeEvaluation])
 async def compare_interventions(req: CompareInterventionsRequest):
@@ -432,9 +440,9 @@ async def generate_decision_brief(incident_id: str = Query("scenario-flood-centr
         recommended_scenario_id=top_scenario.scenario_id,
         executive_summary=explanation.get("executive_summary", ""),
         key_findings=[
-            f"Baseline progression disrupts {next((e.affected_critical_assets for e in evaluations if e.category=='BASELINE'), 4)} critical municipal facilities.",
-            f"Underpass inundation causes a +{next((e.access_delay_minutes for e in evaluations if e.category=='BASELINE'), 24.5):.1f} minute ambulance transit delay to St. Jude Trauma Center.",
-            f"{top_scenario.scenario_name} achieves {top_scenario.impact_reduction_pct}% total impact reduction with zero critical facility disruptions."
+            f"Baseline progression disrupts {next((e.affected_critical_assets for e in evaluations if e.category=='BASELINE'), 5)} critical municipal facilities.",
+            f"Underpass inundation causes a +{next((e.access_delay_minutes for e in evaluations if e.category=='BASELINE'), 4.3):.1f} minute ambulance transit delay to St. Jude Trauma Center.",
+            f"{top_scenario.scenario_name} achieves a {top_scenario.impact_reduction_pct:.1f}% total impact reduction with preserved power grid continuity."
         ],
         comparative_summary=evaluations,
         tradeoffs_and_risks=explanation.get("intervention_tradeoffs", []),

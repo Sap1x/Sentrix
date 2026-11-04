@@ -95,3 +95,65 @@ def test_decision_brief_provenance_and_audit():
     assert len(brief["key_findings"]) >= 3
     assert len(brief["assumptions_and_limitations"]) >= 3
     assert brief["model_provenance"] in ["LIVE_META_MUSE_SPARK_OPEN", "VERIFIED_DETERMINISTIC_ENGINE"]
+
+
+def test_invalid_weights_api_returns_422():
+    """Verify that submitting invalid MCDA weights to compare API returns HTTP 422."""
+    # Test unknown key
+    res_unknown = client.post(
+        "/api/v1/interventions/compare",
+        json={
+            "incident_id": "scenario-flood-central-2026",
+            "custom_weights": {"non_existent_dimension": 0.5}
+        }
+    )
+    assert res_unknown.status_code == 422
+
+    # Test negative weight
+    res_neg = client.post(
+        "/api/v1/interventions/compare",
+        json={
+            "incident_id": "scenario-flood-central-2026",
+            "custom_weights": {"critical_asset_protection": -0.5}
+        }
+    )
+    assert res_neg.status_code == 422
+
+    # Test all-zero weight
+    res_zero = client.post(
+        "/api/v1/interventions/compare",
+        json={
+            "incident_id": "scenario-flood-central-2026",
+            "custom_weights": {"critical_asset_protection": 0.0, "impact_reduction": 0.0}
+        }
+    )
+    assert res_zero.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_intelligence_fallback_provenance():
+    """Verify that when external AI provider fails or is unconfigured, fallback provenance is deterministic."""
+    from sentrix.intelligence.provider import ModelInferenceProvider
+    from sentrix.models.schemas import Incident
+
+    mock_provider = ModelInferenceProvider()
+    mock_provider.api_key = ""  # Unconfigure
+
+    test_incident = Incident(
+        id="test-inc",
+        title="Test Flood",
+        category="URBAN_FLASH_FLOOD",
+        severity="CRITICAL",
+        epicenter=(40.715, -74.009),
+        radius_meters=1000.0,
+        flood_depth_cm=50.0,
+        progression_rate_cm_per_hour=10.0,
+        description="Test description",
+        evidence=[]
+    )
+
+    result = await mock_provider.analyze_incident(test_incident)
+    assert result.model_provenance == "VERIFIED_DETERMINISTIC_ENGINE"
+    assert len(result.risk_hypotheses) > 0
+    assert result.confidence_score >= 0.90
+
