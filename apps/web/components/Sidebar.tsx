@@ -27,19 +27,19 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange }) => {
   const navItems: { id: ViewTab; label: string; icon: React.ReactNode }[] = [
-    { id: "command_center", label: "Command Center", icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: "incident_intake", label: "Incident Intake", icon: <Radio className="w-4 h-4" /> },
-    { id: "digital_twin", label: "Digital Twin", icon: <MapPin className="w-4 h-4" /> },
-    { id: "cascade_simulation", label: "Cascade Engine", icon: <GitBranch className="w-4 h-4" /> },
-    { id: "scenario_lab", label: "Scenario Lab", icon: <Sliders className="w-4 h-4" /> },
-    { id: "decision_brief", label: "Decision Brief", icon: <FileCheck2 className="w-4 h-4" /> },
-    { id: "system_health", label: "System Telemetry", icon: <Server className="w-4 h-4" /> },
+    { id: "command_center", label: "Command Center", icon: <LayoutDashboard className="w-4 h-4 shrink-0" /> },
+    { id: "incident_intake", label: "Incident Intake", icon: <Radio className="w-4 h-4 shrink-0" /> },
+    { id: "digital_twin", label: "Digital Twin", icon: <MapPin className="w-4 h-4 shrink-0" /> },
+    { id: "cascade_simulation", label: "Cascade Engine", icon: <GitBranch className="w-4 h-4 shrink-0" /> },
+    { id: "scenario_lab", label: "Scenario Lab", icon: <Sliders className="w-4 h-4 shrink-0" /> },
+    { id: "decision_brief", label: "Decision Brief", icon: <FileCheck2 className="w-4 h-4 shrink-0" /> },
+    { id: "system_health", label: "System Telemetry", icon: <Server className="w-4 h-4 shrink-0" /> },
   ];
 
   return (
-    <aside className="w-52 border-r border-sentrix-border bg-sentrix-surface flex flex-col justify-between p-2 select-none shrink-0 z-10">
+    <aside className="w-14 md:w-52 border-r border-sentrix-border bg-sentrix-surface flex flex-col justify-between p-2 select-none shrink-0 z-10 transition-all duration-200">
       <div className="space-y-1">
-        <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-sentrix-textMuted font-semibold">
+        <div className="hidden md:block px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-sentrix-textMuted font-semibold">
           Resilience Operations
         </div>
 
@@ -49,21 +49,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange }) => 
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded text-xs font-medium transition ${
+              title={item.label}
+              aria-label={item.label}
+              className={`w-full flex items-center justify-center md:justify-start space-x-0 md:space-x-2.5 px-2 md:px-3 py-2 rounded text-xs font-medium transition ${
                 isActive
-                  ? "bg-blue-600/20 text-blue-400 border border-blue-500/30"
+                  ? "bg-blue-600/20 text-blue-400 border border-blue-500/30 font-semibold"
                   : "text-gray-400 hover:text-gray-200 hover:bg-sentrix-elevated border border-transparent"
               }`}
             >
               {item.icon}
-              <span>{item.label}</span>
+              <span className="hidden md:inline truncate">{item.label}</span>
             </button>
           );
         })}
       </div>
 
       {/* Operational Protocol Notice */}
-      <div className="p-2.5 rounded bg-sentrix-bg border border-sentrix-border text-[11px] font-mono text-sentrix-textMuted">
+      <div className="hidden md:block p-2.5 rounded bg-sentrix-bg border border-sentrix-border text-[11px] font-mono text-sentrix-textMuted">
         <div className="text-[10px] uppercase font-bold text-gray-300 mb-1 flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
           Protocol Notice

@@ -38,13 +38,19 @@ export const SystemHealthModal: React.FC<SystemHealthModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="system-health-title"
+      data-testid="system-health-modal"
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"
+    >
       <div className="w-full max-w-xl bg-sentrix-surface border border-sentrix-border rounded-lg shadow-2xl flex flex-col overflow-hidden font-mono text-xs select-none">
         {/* Header */}
         <div className="px-5 py-3 border-b border-sentrix-border bg-sentrix-bg flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Activity className="w-4 h-4 text-emerald-400" />
-            <h3 className="font-bold text-sm text-gray-100 tracking-wider">
+            <h3 id="system-health-title" className="font-bold text-sm text-gray-100 tracking-wider">
               SYSTEM HEALTH & OPERATIONAL OBSERVABILITY
             </h3>
           </div>
@@ -55,11 +61,14 @@ export const SystemHealthModal: React.FC<SystemHealthModalProps> = ({
               disabled={loading}
               className="p-1 rounded hover:bg-sentrix-border text-gray-400 hover:text-white transition"
               title="Refresh"
+              aria-label="Refresh Health Data"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             </button>
             <button
               onClick={onClose}
+              data-testid="close-health-btn"
+              aria-label="Close System Health"
               className="p-1 rounded hover:bg-sentrix-border text-gray-400 hover:text-white transition"
             >
               <X className="w-4 h-4" />

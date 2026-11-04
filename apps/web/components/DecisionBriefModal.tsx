@@ -78,13 +78,19 @@ ${brief.assumptions_and_limitations.map((a) => `- ${a}`).join("\n")}
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="decision-brief-title"
+      data-testid="decision-brief-modal"
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"
+    >
       <div className="w-full max-w-3xl bg-sentrix-surface border border-sentrix-border rounded-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden font-mono text-xs select-none">
         {/* Modal Header */}
         <div className="px-5 py-3 border-b border-sentrix-border bg-sentrix-bg flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <FileText className="w-4 h-4 text-blue-400" />
-            <h3 className="font-bold text-sm text-gray-100 tracking-wider">
+            <h3 id="decision-brief-title" className="font-bold text-sm text-gray-100 tracking-wider">
               OPERATIONAL RESILIENCE DECISION BRIEF
             </h3>
             <span className="text-[10px] text-sentrix-textMuted font-mono">
@@ -94,6 +100,8 @@ ${brief.assumptions_and_limitations.map((a) => `- ${a}`).join("\n")}
 
           <button
             onClick={onClose}
+            data-testid="close-brief-btn"
+            aria-label="Close Decision Brief"
             className="p-1 rounded hover:bg-sentrix-border text-gray-400 hover:text-white transition"
           >
             <X className="w-4 h-4" />
@@ -244,6 +252,7 @@ ${brief.assumptions_and_limitations.map((a) => `- ${a}`).join("\n")}
             </button>
             <button
               onClick={onClose}
+              data-testid="close-brief-btn-bottom"
               className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white transition font-medium"
             >
               Close

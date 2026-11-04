@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-11-04T20:43:30.711Z",
+  "baseUrl": "http://localhost:3000",
+  "totalConsoleLogs": 0,
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "networkErrors": [],
+  "screenshots": [
+    "01_command_center_desktop.png",
+    "02_dependency_topology.png",
+    "03_asset_inspector_selected.png",
+    "04_timeline_step_t2h.png",
+    "05_incident_intake.png",
+    "06_scenario_lab.png",
+    "07_scenario_lab_lifesafety_preset.png",
+    "08_decision_brief_modal.png",
+    "09_system_health_modal.png",
+    "10_laptop_1280x800.png",
+    "11_tablet_768x1024.png",
+    "12_mobile_390x844.png",
+    "13_mobile_intelligence_drawer.png"
+  ]
+}

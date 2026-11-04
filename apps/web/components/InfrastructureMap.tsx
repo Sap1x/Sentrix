@@ -147,7 +147,7 @@ export const InfrastructureMap: React.FC<InfrastructureMapProps> = ({
       </div>
 
       {/* Dynamic Route & Incident Status Banner */}
-      <div className="absolute top-3 right-3 z-10">
+      <div className="absolute top-12 left-3 z-10 max-w-[calc(100%-24px)] md:max-w-xl">
         {isUnderpassSevered ? (
           <div className="px-3 py-1.5 rounded bg-red-950/90 border border-red-600/60 backdrop-blur text-xs font-mono text-red-200 flex items-center space-x-2 shadow-lg">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />

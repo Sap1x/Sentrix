@@ -55,9 +55,10 @@ export default function SentrixDashboard() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Modals
+  // Modals & Drawers
   const [briefModalOpen, setBriefModalOpen] = useState<boolean>(false);
   const [healthModalOpen, setHealthModalOpen] = useState<boolean>(false);
+  const [mobileIntelOpen, setMobileIntelOpen] = useState<boolean>(false);
 
   // Initial Data Fetch
   useEffect(() => {
@@ -192,6 +193,7 @@ export default function SentrixDashboard() {
         modelStatus={health?.model_provider_status || "ONLINE"}
         onOpenDecisionBrief={handleOpenDecisionBrief}
         onOpenSystemHealth={() => setHealthModalOpen(true)}
+        onToggleMobileIntel={() => setMobileIntelOpen(!mobileIntelOpen)}
       />
 
       {/* Main Workspace Body */}
@@ -283,28 +285,59 @@ export default function SentrixDashboard() {
             )}
           </div>
 
-          {/* Bottom Simulation Timeline Scrubber */}
-          <TimelineController
-            simulationRun={simulationRun}
-            currentStepIndex={currentStepIndex}
-            onStepChange={(idx) => setCurrentStepIndex(idx)}
-            isPlaying={isPlaying}
-            onTogglePlay={() => setIsPlaying(!isPlaying)}
-            onReset={() => {
-              setCurrentStepIndex(0);
-              setIsPlaying(false);
-            }}
-          />
+          {/* Bottom Simulation Timeline Scrubber — Only on simulation views */}
+          {(currentTab === "command_center" || currentTab === "cascade_simulation") && (
+            <TimelineController
+              simulationRun={simulationRun}
+              currentStepIndex={currentStepIndex}
+              onStepChange={(idx) => setCurrentStepIndex(idx)}
+              isPlaying={isPlaying}
+              onTogglePlay={() => setIsPlaying(!isPlaying)}
+              onReset={() => {
+                setCurrentStepIndex(0);
+                setIsPlaying(false);
+              }}
+            />
+          )}
         </main>
 
-        {/* Right AI Intelligence Panel */}
-        <IntelligencePanel
-          incident={incident}
-          intelligence={intelligence}
-          selectedAsset={selectedAsset}
-          currentAssetState={selectedAsset ? currentStepMetrics?.asset_states[selectedAsset.id] : undefined}
-          onClearSelectedAsset={() => setSelectedAsset(null)}
-        />
+        {/* Right AI Intelligence Panel — Docked on Desktop (xl:), Slide-over on Mobile/Tablet */}
+        <div className="hidden xl:flex">
+          <IntelligencePanel
+            incident={incident}
+            intelligence={intelligence}
+            selectedAsset={selectedAsset}
+            currentAssetState={selectedAsset ? currentStepMetrics?.asset_states[selectedAsset.id] : undefined}
+            onClearSelectedAsset={() => setSelectedAsset(null)}
+          />
+        </div>
+
+        {/* Mobile/Tablet Slide-Over Drawer */}
+        {mobileIntelOpen && (
+          <div className="xl:hidden fixed inset-0 z-40 bg-black/75 backdrop-blur-sm flex justify-end">
+            <div className="relative w-84 sm:w-96 h-full bg-sentrix-surface shadow-2xl flex flex-col border-l border-sentrix-border">
+              <div className="p-2.5 border-b border-sentrix-border bg-sentrix-bg flex items-center justify-between font-mono">
+                <span className="text-xs text-gray-200 font-bold">AI Intelligence & Inspector</span>
+                <button
+                  onClick={() => setMobileIntelOpen(false)}
+                  className="px-2.5 py-1 rounded bg-sentrix-elevated hover:bg-sentrix-border text-gray-300 hover:text-white text-xs border border-sentrix-border transition"
+                  aria-label="Close Intelligence Panel"
+                >
+                  Close ✕
+                </button>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <IntelligencePanel
+                  incident={incident}
+                  intelligence={intelligence}
+                  selectedAsset={selectedAsset}
+                  currentAssetState={selectedAsset ? currentStepMetrics?.asset_states[selectedAsset.id] : undefined}
+                  onClearSelectedAsset={() => setSelectedAsset(null)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Decision Brief Modal */}

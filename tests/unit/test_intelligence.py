@@ -348,3 +348,4 @@ async def test_schema_validation_failure_routes_to_fallback(sample_incident, moc
         assert res.model_provenance == "VERIFIED_DETERMINISTIC_ENGINE"
         assert res.confidence_score is None
         assert res.diagnostic_metadata["failure_category"] == "SCHEMA_VALIDATION_ERROR"
+

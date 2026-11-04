@@ -35,7 +35,7 @@ export const IncidentIntake: React.FC<IncidentIntakeProps> = ({
   };
 
   return (
-    <div className="w-full h-full bg-[#090b10] p-4 overflow-y-auto space-y-4 rounded border border-sentrix-border font-mono text-xs select-none">
+    <div className="w-full h-full bg-[#090b10] p-4 pb-16 overflow-y-auto space-y-4 rounded border border-sentrix-border font-mono text-xs select-none">
       <div className="flex items-center justify-between pb-2 border-b border-sentrix-border">
         <div>
           <h3 className="text-sm font-bold text-gray-200 uppercase tracking-wider flex items-center gap-2">
