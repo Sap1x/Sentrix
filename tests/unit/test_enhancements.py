@@ -155,5 +155,7 @@ async def test_intelligence_fallback_provenance():
     result = await mock_provider.analyze_incident(test_incident)
     assert result.model_provenance == "VERIFIED_DETERMINISTIC_ENGINE"
     assert len(result.risk_hypotheses) > 0
-    assert result.confidence_score >= 0.90
+    assert result.confidence_score is None
+    assert result.diagnostic_metadata is not None
+    assert result.diagnostic_metadata["failure_category"] == "PROVIDER_UNCONFIGURED"
 

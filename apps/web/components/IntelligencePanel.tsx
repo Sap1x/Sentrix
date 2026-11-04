@@ -71,9 +71,15 @@ export const IntelligencePanel: React.FC<IntelligencePanelProps> = ({
         </div>
 
         {intelligence && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800">
-            {Math.round(intelligence.confidence_score * 100)}% CONF
-          </span>
+          intelligence.confidence_score !== null && intelligence.confidence_score !== undefined ? (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800">
+              {Math.round(intelligence.confidence_score * 100)}% CONF
+            </span>
+          ) : (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-900/60 text-gray-400 border border-gray-700">
+              CONF: UNAVAILABLE
+            </span>
+          )
         )}
       </div>
 
@@ -157,13 +163,35 @@ export const IntelligencePanel: React.FC<IntelligencePanelProps> = ({
           /* AI Intelligence & Structured Hypotheses */
           <div className="space-y-3 font-mono">
             {/* Model Provenance Banner */}
-            <div className="px-2.5 py-1.5 rounded bg-blue-950/40 border border-blue-800/40 text-[10px] flex items-center justify-between text-blue-300">
-              <span className="flex items-center gap-1 font-bold">
-                <Cpu className="w-3 h-3 text-blue-400" />
-                META MUSE SPARK OPEN
-              </span>
-              <span className="text-gray-400">Verified Multimodal Inference</span>
-            </div>
+            {intelligence?.model_provenance === "LIVE_META_MUSE_SPARK_OPEN" ? (
+              <div className="px-2.5 py-1.5 rounded bg-blue-950/40 border border-blue-800/40 text-[10px] flex items-center justify-between text-blue-300">
+                <span className="flex items-center gap-1 font-bold">
+                  <Cpu className="w-3 h-3 text-blue-400" />
+                  META MUSE SPARK OPEN
+                </span>
+                <span className="text-emerald-400 font-mono text-[10px]">Live Inference</span>
+              </div>
+            ) : intelligence?.model_provenance === "VERIFIED_DETERMINISTIC_ENGINE" ? (
+              <div className="px-2.5 py-1.5 rounded bg-amber-950/30 border border-amber-800/40 text-[10px] flex items-center justify-between text-amber-300">
+                <span className="flex items-center gap-1 font-bold">
+                  <ShieldAlert className="w-3 h-3 text-amber-400" />
+                  DETERMINISTIC ENGINE
+                </span>
+                <span className="text-amber-400/80 font-mono text-[10px]">
+                  {intelligence?.diagnostic_metadata?.failure_category
+                    ? `Fallback (${intelligence.diagnostic_metadata.failure_category})`
+                    : "Deterministic Fallback"}
+                </span>
+              </div>
+            ) : (
+              <div className="px-2.5 py-1.5 rounded bg-gray-900/60 border border-gray-700 text-[10px] flex items-center justify-between text-gray-400">
+                <span className="flex items-center gap-1 font-bold">
+                  <ShieldAlert className="w-3 h-3 text-gray-500" />
+                  INFERENCE UNAVAILABLE
+                </span>
+                <span className="text-gray-500 font-mono text-[10px]">Offline</span>
+              </div>
+            )}
 
             {/* Plausible Cascades */}
             <div className="space-y-1.5">
@@ -172,17 +200,20 @@ export const IntelligencePanel: React.FC<IntelligencePanelProps> = ({
                 Plausible Failure Chains
               </div>
               <div className="space-y-1.5">
-                {(intelligence?.plausible_cascades || [
-                  "Direct Inundation -> Grand Underpass Blocked -> EMS Transit Severed (+24 min)",
-                  "Substation 01 Flooded -> St. Jude on Backup Generator -> 2hr Depletion -> ICU Constraint"
-                ]).map((casc, idx) => (
-                  <div
-                    key={idx}
-                    className="p-2 rounded bg-sentrix-bg border border-sentrix-border text-[11px] text-gray-300 leading-tight"
-                  >
-                    {casc}
+                {intelligence?.plausible_cascades && intelligence.plausible_cascades.length > 0 ? (
+                  intelligence.plausible_cascades.map((casc, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2 rounded bg-sentrix-bg border border-sentrix-border text-[11px] text-gray-300 leading-tight"
+                    >
+                      {casc}
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-2 rounded bg-sentrix-bg border border-sentrix-border text-[11px] text-gray-500 italic">
+                    No plausible failure chains reported.
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -193,11 +224,17 @@ export const IntelligencePanel: React.FC<IntelligencePanelProps> = ({
                 Structured Risk Hypotheses
               </div>
               <div className="space-y-1">
-                {(intelligence?.risk_hypotheses || []).map((hyp, idx) => (
-                  <div key={idx} className="p-2 rounded bg-sentrix-bg border border-sentrix-border text-[11px] text-gray-300 leading-snug">
-                    • {hyp}
+                {intelligence?.risk_hypotheses && intelligence.risk_hypotheses.length > 0 ? (
+                  intelligence.risk_hypotheses.map((hyp, idx) => (
+                    <div key={idx} className="p-2 rounded bg-sentrix-bg border border-sentrix-border text-[11px] text-gray-300 leading-snug">
+                      • {hyp}
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-2 rounded bg-sentrix-bg border border-sentrix-border text-[11px] text-gray-500 italic">
+                    No risk hypotheses reported.
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -208,12 +245,13 @@ export const IntelligencePanel: React.FC<IntelligencePanelProps> = ({
                 Uncertainties & Information Gaps
               </div>
               <div className="p-2 rounded bg-sentrix-bg border border-sentrix-border text-[10px] text-gray-400 space-y-1">
-                {(intelligence?.uncertainty_indicators || [
-                  "Peak river storm-surge crest time unconfirmed by upstream telemetry.",
-                  "St. Jude auxiliary diesel reserve volume requires physical dipstick confirmation."
-                ]).map((unc, idx) => (
-                  <div key={idx}>- {unc}</div>
-                ))}
+                {intelligence?.uncertainty_indicators && intelligence.uncertainty_indicators.length > 0 ? (
+                  intelligence.uncertainty_indicators.map((unc, idx) => (
+                    <div key={idx}>- {unc}</div>
+                  ))
+                ) : (
+                  <div className="text-gray-500 italic">None reported.</div>
+                )}
               </div>
             </div>
 
@@ -232,7 +270,7 @@ export const IntelligencePanel: React.FC<IntelligencePanelProps> = ({
 
               {showReasoning && (
                 <div className="p-2.5 rounded bg-sentrix-bg border border-sentrix-border text-[10px] text-gray-300 leading-relaxed max-h-36 overflow-y-auto mt-1">
-                  {intelligence?.reasoning_summary || "Grounding analysis performed against NetworkX topological graph and hydraulic elevation margins."}
+                  {intelligence?.operational_rationale || intelligence?.reasoning_summary || "Operational assessment grounded in digital twin infrastructure topology."}
                 </div>
               )}
             </div>

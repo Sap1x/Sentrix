@@ -121,7 +121,7 @@ SENTRIX natively integrates Meta's flagship model:
   - `risk_hypotheses`: Causal failure predictions.
   - `plausible_cascades`: High-probability propagation vectors.
   - `uncertainty_indicators`: Information gaps requiring sensor verification.
-  - `reasoning_summary`: Operational rationale summary grounded in topology.
+  - `operational_rationale`: Operational rationale summary grounded in topology and elevation models.
 - **Graceful Degradation:** When Baseten is offline or rate-limited, the system falls back to a deterministic rule-grounded engine, explicitly labeled as `VERIFIED_DETERMINISTIC_ENGINE`. When live, outputs carry the verified provenance `LIVE_META_MUSE_SPARK_OPEN`.
 
 ---

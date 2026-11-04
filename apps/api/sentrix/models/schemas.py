@@ -4,9 +4,9 @@ Provides strict schemas for digital twin assets, dependencies, incidents,
 simulations, interventions, and AI model intelligence outputs.
 """
 from enum import Enum
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Literal
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
 class AssetType(str, Enum):
@@ -205,9 +205,23 @@ class IntelligenceAnalysisResponse(BaseModel):
     plausible_cascades: List[str]
     uncertainty_indicators: List[str]
     missing_information: List[str]
-    reasoning_summary: str
-    model_provenance: str
-    confidence_score: float
+    operational_rationale: str
+    reasoning_summary: Optional[str] = None
+    model_provenance: Literal["LIVE_META_MUSE_SPARK_OPEN", "VERIFIED_DETERMINISTIC_ENGINE", "UNAVAILABLE"]
+    confidence_score: Optional[float] = None
+    diagnostic_metadata: Optional[Dict[str, Any]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def sync_rationale(cls, values: Any) -> Any:
+        if isinstance(values, dict):
+            op_rat = values.get("operational_rationale")
+            reas_sum = values.get("reasoning_summary")
+            if op_rat and not reas_sum:
+                values["reasoning_summary"] = op_rat
+            elif reas_sum and not op_rat:
+                values["operational_rationale"] = reas_sum
+        return values
 
 
 class SystemHealthResponse(BaseModel):

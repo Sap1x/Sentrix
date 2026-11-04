@@ -40,7 +40,7 @@ SENTRIX implements an infrastructure resilience and cascading-failure intelligen
 - **Risk Severity:** P0 (Critical AI Functionality)
 - **Defect Description:** Meta's `muse-spark-open` model on Baseten generates 500–600 tokens of internal chain-of-thought in `reasoning_content` before generating `content`. In `scripts/smoke_baseten.py` and initial calls with `max_tokens <= 500`, the completion token budget was exhausted during reasoning, resulting in `finish_reason: length` and an empty `content` field.
 - **Reproduction:** Call Baseten with `max_tokens: 400`. The response choices have `finish_reason: length` and `content: null`.
-- **Proposed Remediation:** Increase completion token budget to `max_tokens: 2500` across all provider requests. Add defensive extraction that falls back to extracting JSON from `reasoning_content` if `content` is truncated.
+- **Proposed Remediation:** Increase completion token budget to `max_tokens: 4096` across provider requests to ensure full token allowance for internal reasoning and complete JSON generation. Never extract, log, or persist raw `reasoning_content`; discard internal thinking tokens and parse structured `content` strictly with Pydantic validation.
 - **Status:** **REMEDIATED & VERIFIED** (HTTP 200 OK, full JSON content and reasoning received).
 
 ### Defect 2 (P0): Incident Parameter Updates in UI Were Not Propagating to Simulation Runs

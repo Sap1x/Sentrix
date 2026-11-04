@@ -451,7 +451,7 @@ async def generate_decision_brief(incident_id: str = Query("scenario-flood-centr
             "Water progression model assumes steady hydraulic rate without levee breach.",
             "All recommendations are decision-support outputs requiring authorized human operator validation."
         ],
-        model_provenance=explanation.get("model_provenance", "LIVE_META_MUSE_SPARK_OPEN"),
+        model_provenance=explanation.get("model_provenance", "VERIFIED_DETERMINISTIC_ENGINE"),
         operator_signoff_required=True
     )
 
