@@ -160,75 +160,95 @@ class CascadingFailureSimulator:
                             severity="WARNING"
                         ))
 
-            # 3. Upstream Dependency Propagation (Power, Water, Comm)
-            # Find dependencies where target depends on source
-            for dep in dependencies:
-                if dep.dependency_type == DependencyType.POWER_GRID:
-                    source_asset = assets.get(dep.source_asset_id)
-                    target_asset = assets.get(dep.target_asset_id)
+            # 3. Upstream Dependency Propagation (Multi-hop Convergence)
+            # Evaluate cascading dependency constraints to a fixed point
+            propagation_changed = True
+            iter_count = 0
+            max_cascade_depth = 8
 
-                    if source_asset and target_asset:
-                        if source_asset.operational_state == OperationalState.FAILED:
-                            dep.status = "SEVERED"
-                            # Target loses grid power
-                            if target_asset.operational_state not in [OperationalState.FAILED, OperationalState.ISOLATED]:
-                                if target_asset.backup_power_remaining_hours > 0:
-                                    target_asset.backup_power_remaining_hours = max(
-                                        0.0, target_asset.backup_power_remaining_hours - step_size_hours
-                                    )
-                                    if target_asset.operational_state != OperationalState.DEGRADED:
-                                        target_asset.operational_state = OperationalState.DEGRADED
-                                        events_log.append(SimulationStepEvent(
-                                            step=step,
-                                            time_offset_hours=t_hours,
-                                            asset_id=target_asset.id,
-                                            asset_name=target_asset.name,
-                                            event_type="GRID_POWER_LOST",
-                                            description=f"Primary grid power lost from {source_asset.name}. Operating on emergency generator ({target_asset.backup_power_remaining_hours:.1f}h fuel remaining).",
-                                            severity="WARNING"
-                                        ))
-                                else:
-                                    # Backup depleted!
-                                    if target_asset.asset_type == AssetType.HOSPITAL:
-                                        target_asset.operational_state = OperationalState.DEGRADED
-                                        target_asset.current_load = target_asset.total_capacity * 0.35  # ICU constrained
-                                        events_log.append(SimulationStepEvent(
-                                            step=step,
-                                            time_offset_hours=t_hours,
-                                            asset_id=target_asset.id,
-                                            asset_name=target_asset.name,
-                                            event_type="POWER_EXHAUSTION",
-                                            description="Emergency diesel generator exhausted. Surgical and critical life-support operating in brownout.",
-                                            severity="CRITICAL"
-                                        ))
+            while propagation_changed and iter_count < max_cascade_depth:
+                propagation_changed = False
+                iter_count += 1
+
+                for dep in dependencies:
+                    if dep.dependency_type == DependencyType.POWER_GRID:
+                        source_asset = assets.get(dep.source_asset_id)
+                        target_asset = assets.get(dep.target_asset_id)
+
+                        if source_asset and target_asset:
+                            if source_asset.operational_state == OperationalState.FAILED:
+                                if dep.status != "SEVERED":
+                                    dep.status = "SEVERED"
+                                    propagation_changed = True
+
+                                # Target loses grid power
+                                if target_asset.operational_state not in [OperationalState.FAILED, OperationalState.ISOLATED]:
+                                    if target_asset.backup_power_remaining_hours > 0:
+                                        if iter_count == 1:
+                                            target_asset.backup_power_remaining_hours = max(
+                                                0.0, target_asset.backup_power_remaining_hours - step_size_hours
+                                            )
+                                        if target_asset.operational_state != OperationalState.DEGRADED:
+                                            target_asset.operational_state = OperationalState.DEGRADED
+                                            propagation_changed = True
+                                            events_log.append(SimulationStepEvent(
+                                                step=step,
+                                                time_offset_hours=t_hours,
+                                                asset_id=target_asset.id,
+                                                asset_name=target_asset.name,
+                                                event_type="GRID_POWER_LOST",
+                                                description=f"Primary grid power lost from {source_asset.name}. Operating on emergency generator ({target_asset.backup_power_remaining_hours:.1f}h fuel remaining).",
+                                                severity="WARNING"
+                                            ))
                                     else:
-                                        target_asset.operational_state = OperationalState.FAILED
-                                        events_log.append(SimulationStepEvent(
-                                            step=step,
-                                            time_offset_hours=t_hours,
-                                            asset_id=target_asset.id,
-                                            asset_name=target_asset.name,
-                                            event_type="POWER_EXHAUSTION",
-                                            description="Backup generator exhausted. Asset unpowered and halted.",
-                                            severity="CRITICAL"
-                                        ))
+                                        # Backup depleted!
+                                        if target_asset.asset_type == AssetType.HOSPITAL:
+                                            if target_asset.operational_state != OperationalState.DEGRADED or target_asset.current_load > target_asset.total_capacity * 0.4:
+                                                target_asset.operational_state = OperationalState.DEGRADED
+                                                target_asset.current_load = target_asset.total_capacity * 0.35  # ICU constrained
+                                                propagation_changed = True
+                                                events_log.append(SimulationStepEvent(
+                                                    step=step,
+                                                    time_offset_hours=t_hours,
+                                                    asset_id=target_asset.id,
+                                                    asset_name=target_asset.name,
+                                                    event_type="POWER_EXHAUSTION",
+                                                    description="Emergency diesel generator exhausted. Surgical and critical life-support operating in brownout.",
+                                                    severity="CRITICAL"
+                                                ))
+                                        else:
+                                            if target_asset.operational_state != OperationalState.FAILED:
+                                                target_asset.operational_state = OperationalState.FAILED
+                                                propagation_changed = True
+                                                events_log.append(SimulationStepEvent(
+                                                    step=step,
+                                                    time_offset_hours=t_hours,
+                                                    asset_id=target_asset.id,
+                                                    asset_name=target_asset.name,
+                                                    event_type="POWER_EXHAUSTION",
+                                                    description="Backup generator exhausted. Asset unpowered and halted.",
+                                                    severity="CRITICAL"
+                                                ))
 
-                elif dep.dependency_type == DependencyType.WATER_SERVICE:
-                    source_pump = assets.get(dep.source_asset_id)
-                    target_hosp = assets.get(dep.target_asset_id)
-                    if source_pump and target_hosp and source_pump.operational_state == OperationalState.FAILED:
-                        dep.status = "SEVERED"
-                        if target_hosp.operational_state == OperationalState.NOMINAL:
-                            target_hosp.operational_state = OperationalState.DEGRADED
-                            events_log.append(SimulationStepEvent(
-                                step=step,
-                                time_offset_hours=t_hours,
-                                asset_id=target_hosp.id,
-                                asset_name=target_hosp.name,
-                                event_type="WATER_SERVICE_INTERRUPTED",
-                                description=f"Water pressure dropped due to failure of {source_pump.name}. Sterilization systems offline.",
-                                severity="WARNING"
-                            ))
+                    elif dep.dependency_type == DependencyType.WATER_SERVICE:
+                        source_pump = assets.get(dep.source_asset_id)
+                        target_hosp = assets.get(dep.target_asset_id)
+                        if source_pump and target_hosp and source_pump.operational_state == OperationalState.FAILED:
+                            if dep.status != "SEVERED":
+                                dep.status = "SEVERED"
+                                propagation_changed = True
+                            if target_hosp.operational_state == OperationalState.NOMINAL:
+                                target_hosp.operational_state = OperationalState.DEGRADED
+                                propagation_changed = True
+                                events_log.append(SimulationStepEvent(
+                                    step=step,
+                                    time_offset_hours=t_hours,
+                                    asset_id=target_hosp.id,
+                                    asset_name=target_hosp.name,
+                                    event_type="WATER_SERVICE_INTERRUPTED",
+                                    description=f"Water pressure dropped due to failure of {source_pump.name}. Sterilization systems offline.",
+                                    severity="WARNING"
+                                ))
 
             # 4. Road Network Accessibility & Shortest Path Routing
             road_graph = nx.Graph()

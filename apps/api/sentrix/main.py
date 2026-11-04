@@ -9,7 +9,8 @@ import uuid
 import json
 import asyncio
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,12 +41,35 @@ SIMULATION_CACHE: Dict[str, SimulationRunResult] = {}
 INCIDENT_CACHE: Dict[str, Incident] = {}
 TOTAL_SIMULATIONS_COUNTER = 0
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Pre-load default incident scenario into cache on startup
+    scenarios = repo.list_scenarios()
+    for s in scenarios:
+        inc = Incident(
+            id=s["id"],
+            title=s["title"],
+            category=s.get("category", "URBAN_FLASH_FLOOD"),
+            severity=s.get("severity", "CRITICAL"),
+            epicenter=tuple(s["epicenter"]),
+            radius_meters=s.get("radius_meters", 1200.0),
+            flood_depth_cm=s.get("flood_depth_cm", 65.0),
+            progression_rate_cm_per_hour=s.get("progression_rate_cm_per_hour", 14.0),
+            description=s.get("description", ""),
+            evidence=s.get("evidence", [])
+        )
+        INCIDENT_CACHE[inc.id] = inc
+    yield
+
+
 app = FastAPI(
     title="SENTRIX API",
     description="AI-Powered Infrastructure Resilience & Cascading-Failure Intelligence Platform",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # CORS Configuration
@@ -69,26 +93,6 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Correlation-ID"] = correlation_id
     return response
 
-
-# --- Initialization / Fixture Seeding ---
-@app.on_event("startup")
-async def startup_event():
-    # Pre-load default incident scenario into cache
-    scenarios = repo.list_scenarios()
-    for s in scenarios:
-        inc = Incident(
-            id=s["id"],
-            title=s["title"],
-            category=s.get("category", "URBAN_FLASH_FLOOD"),
-            severity=s.get("severity", "CRITICAL"),
-            epicenter=tuple(s["epicenter"]),
-            radius_meters=s.get("radius_meters", 1200.0),
-            flood_depth_cm=s.get("flood_depth_cm", 65.0),
-            progression_rate_cm_per_hour=s.get("progression_rate_cm_per_hour", 14.0),
-            description=s.get("description", ""),
-            evidence=s.get("evidence", [])
-        )
-        INCIDENT_CACHE[inc.id] = inc
 
 
 # --- Health & Telemetry Endpoints ---
@@ -169,6 +173,9 @@ class SimulationRequest(BaseModel):
     time_horizon_hours: int = 5
     step_size_hours: float = 1.0
     random_seed: int = 42
+    custom_flood_depth_cm: Optional[float] = None
+    custom_progression_rate_cm_per_hour: Optional[float] = None
+    custom_radius_meters: Optional[float] = None
 
 
 @app.post("/api/v1/simulations", response_model=SimulationRunResult)
@@ -195,6 +202,15 @@ async def run_simulation(req: SimulationRequest):
         else:
             raise HTTPException(status_code=404, detail=f"Incident {req.incident_id} not found")
 
+    # Clone incident to apply custom calibration parameters if provided
+    active_incident = incident.model_copy(deep=True)
+    if req.custom_flood_depth_cm is not None:
+        active_incident.flood_depth_cm = req.custom_flood_depth_cm
+    if req.custom_progression_rate_cm_per_hour is not None:
+        active_incident.progression_rate_cm_per_hour = req.custom_progression_rate_cm_per_hour
+    if req.custom_radius_meters is not None:
+        active_incident.radius_meters = req.custom_radius_meters
+
     # Retrieve selected intervention scenario
     scen_raw = repo.get_scenario_raw(req.incident_id)
     selected_scenario: Optional[InterventionScenario] = None
@@ -216,7 +232,7 @@ async def run_simulation(req: SimulationRequest):
 
     simulator = CascadingFailureSimulator(repo.get_graph_data())
     result = simulator.run_simulation(
-        incident=incident,
+        incident=active_incident,
         scenario=selected_scenario,
         time_horizon_hours=req.time_horizon_hours,
         step_size_hours=req.step_size_hours,
@@ -270,6 +286,10 @@ class CompareInterventionsRequest(BaseModel):
         "scen-substation-barrier",
         "scen-combined-mitigation"
     ]
+    custom_flood_depth_cm: Optional[float] = None
+    custom_progression_rate_cm_per_hour: Optional[float] = None
+    custom_radius_meters: Optional[float] = None
+    custom_weights: Optional[Dict[str, float]] = None
 
 
 @app.post("/api/v1/interventions/compare", response_model=List[ComparativeEvaluation])
@@ -295,9 +315,21 @@ async def compare_interventions(req: CompareInterventionsRequest):
         else:
             raise HTTPException(status_code=404, detail="Incident not found")
 
+    # Clone incident to apply custom calibration parameters if provided
+    active_incident = incident.model_copy(deep=True)
+    if req.custom_flood_depth_cm is not None:
+        active_incident.flood_depth_cm = req.custom_flood_depth_cm
+    if req.custom_progression_rate_cm_per_hour is not None:
+        active_incident.progression_rate_cm_per_hour = req.custom_progression_rate_cm_per_hour
+    if req.custom_radius_meters is not None:
+        active_incident.radius_meters = req.custom_radius_meters
+
     scen_raw = repo.get_scenario_raw(req.incident_id)
     if not scen_raw or "interventions" not in scen_raw:
-        raise HTTPException(status_code=404, detail="No interventions configured for incident")
+        # Fallback to default scenario interventions if incident was custom-created
+        scen_raw = repo.get_scenario_raw("scenario-flood-central-2026")
+        if not scen_raw or "interventions" not in scen_raw:
+            raise HTTPException(status_code=404, detail="No interventions configured for incident")
 
     simulator = CascadingFailureSimulator(repo.get_graph_data())
 
@@ -321,18 +353,22 @@ async def compare_interventions(req: CompareInterventionsRequest):
         )
 
     # Run baseline simulation
-    baseline_run = simulator.run_simulation(incident, baseline_scenario)
+    baseline_run = simulator.run_simulation(active_incident, baseline_scenario)
     SIMULATION_CACHE[baseline_run.simulation_id] = baseline_run
     TOTAL_SIMULATIONS_COUNTER += 1
 
     candidate_runs: List[tuple[InterventionScenario, SimulationRunResult]] = []
     for cand in candidate_scenarios:
-        cand_run = simulator.run_simulation(incident, cand)
+        cand_run = simulator.run_simulation(active_incident, cand)
         SIMULATION_CACHE[cand_run.simulation_id] = cand_run
         TOTAL_SIMULATIONS_COUNTER += 1
         candidate_runs.append((cand, cand_run))
 
-    evaluations = ranking_engine.evaluate_scenarios(baseline_run, candidate_runs)
+    evaluations = ranking_engine.evaluate_scenarios(
+        baseline_run=baseline_run,
+        candidate_runs=candidate_runs,
+        custom_weights=req.custom_weights
+    )
     return evaluations
 
 
@@ -392,7 +428,7 @@ async def generate_decision_brief(incident_id: str = Query("scenario-flood-centr
     return DecisionBrief(
         brief_id=f"brief-{uuid.uuid4().hex[:8]}",
         incident_id=incident_id,
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
         recommended_scenario_id=top_scenario.scenario_id,
         executive_summary=explanation.get("executive_summary", ""),
         key_findings=[

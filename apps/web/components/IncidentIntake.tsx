@@ -7,7 +7,7 @@ import { Radio, AlertTriangle, ShieldAlert, CheckCircle, RefreshCw, Send } from 
 interface IncidentIntakeProps {
   incident: Incident | null;
   onUpdateIncident: (updated: Incident) => void;
-  onRunSimulation: () => void;
+  onRunSimulation: (updatedIncident?: Incident) => void;
   loading: boolean;
 }
 
@@ -23,7 +23,7 @@ export const IncidentIntake: React.FC<IncidentIntakeProps> = ({
 
   if (!incident) return null;
 
-  const handleApplyChanges = () => {
+  const handleApplyChanges = (): Incident => {
     const updated: Incident = {
       ...incident,
       flood_depth_cm: floodDepth,
@@ -31,6 +31,7 @@ export const IncidentIntake: React.FC<IncidentIntakeProps> = ({
       radius_meters: radiusMeters,
     };
     onUpdateIncident(updated);
+    return updated;
   };
 
   return (
@@ -154,8 +155,8 @@ export const IncidentIntake: React.FC<IncidentIntakeProps> = ({
           </button>
           <button
             onClick={() => {
-              handleApplyChanges();
-              onRunSimulation();
+              const updated = handleApplyChanges();
+              onRunSimulation(updated);
             }}
             disabled={loading}
             className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition flex items-center space-x-1.5 shadow-sm"

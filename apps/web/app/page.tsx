@@ -49,6 +49,8 @@ export default function SentrixDashboard() {
   // Interaction States
   const [selectedAsset, setSelectedAsset] = useState<InfrastructureAsset | null>(null);
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>("scen-baseline");
+  const [activePreset, setActivePreset] = useState<string>("balanced");
+  const [customWeights, setCustomWeights] = useState<Record<string, number> | undefined>(undefined);
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -111,17 +113,53 @@ export default function SentrixDashboard() {
   }, []);
 
   // Handle Scenario Selection
-  const handleSelectScenario = async (scenarioId: string) => {
+  const handleSelectScenario = async (
+    scenarioId: string,
+    customInc?: Incident,
+    weights?: Record<string, number>
+  ) => {
     setSelectedScenarioId(scenarioId);
-    if (!incident) return;
+    const incToUse = customInc || incident;
+    if (!incToUse) return;
     try {
       setLoading(true);
-      const sim = await runSimulation(incident.id, scenarioId);
+      const customParams = {
+        custom_flood_depth_cm: incToUse.flood_depth_cm,
+        custom_progression_rate_cm_per_hour: incToUse.progression_rate_cm_per_hour,
+        custom_radius_meters: incToUse.radius_meters,
+        custom_weights: weights || customWeights,
+      };
+
+      const sim = await runSimulation(incToUse.id, scenarioId, 5, customParams);
       setSimulationRun(sim);
       setCurrentStepIndex(0);
       setIsPlaying(false);
+
+      const evals = await compareInterventions(incToUse.id, customParams);
+      setEvaluations(evals);
     } catch (e) {
       console.error("Failed to load scenario run:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectPreset = async (presetId: string, weights: Record<string, number>) => {
+    setActivePreset(presetId);
+    setCustomWeights(weights);
+    if (!incident) return;
+    try {
+      setLoading(true);
+      const customParams = {
+        custom_flood_depth_cm: incident.flood_depth_cm,
+        custom_progression_rate_cm_per_hour: incident.progression_rate_cm_per_hour,
+        custom_radius_meters: incident.radius_meters,
+        custom_weights: weights,
+      };
+      const evals = await compareInterventions(incident.id, customParams);
+      setEvaluations(evals);
+    } catch (e) {
+      console.error("Failed to re-weight scenarios:", e);
     } finally {
       setLoading(false);
     }
@@ -207,7 +245,10 @@ export default function SentrixDashboard() {
               <IncidentIntake
                 incident={incident}
                 onUpdateIncident={(upd) => setIncident(upd)}
-                onRunSimulation={() => handleSelectScenario(selectedScenarioId)}
+                onRunSimulation={(upd) => {
+                  handleSelectScenario(selectedScenarioId, upd);
+                  setCurrentTab("command_center");
+                }}
                 loading={loading}
               />
             ) : currentTab === "scenario_lab" ? (
@@ -218,6 +259,8 @@ export default function SentrixDashboard() {
                   handleSelectScenario(sId);
                   setCurrentTab("command_center");
                 }}
+                activePreset={activePreset}
+                onSelectPreset={handleSelectPreset}
               />
             ) : centerSubView === "dependency_graph" || currentTab === "cascade_simulation" ? (
               <DependencyGraphView

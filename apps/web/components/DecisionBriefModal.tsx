@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { DecisionBrief } from "../lib/types";
-import { FileText, X, CheckCircle, ShieldAlert, Cpu, Download, Printer } from "lucide-react";
+import { FileText, X, CheckCircle, ShieldAlert, Cpu, Download, Printer, Copy, Check } from "lucide-react";
 
 interface DecisionBriefModalProps {
   brief: DecisionBrief | null;
@@ -16,8 +16,66 @@ export const DecisionBriefModal: React.FC<DecisionBriefModalProps> = ({
   onClose,
 }) => {
   const [signedOff, setSignedOff] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
 
   if (!isOpen || !brief) return null;
+
+  const handleCopyMarkdown = () => {
+    const md = `# SENTRIX OPERATIONAL RESILIENCE DECISION BRIEF
+**Brief ID:** ${brief.brief_id}
+**Incident ID:** ${brief.incident_id}
+**Generated At:** ${new Date(brief.generated_at).toISOString()}
+**Model Provenance:** ${brief.model_provenance}
+**Recommended Scenario:** ${brief.recommended_scenario_id}
+
+---
+
+## Executive Summary
+${brief.executive_summary}
+
+---
+
+## Validated Simulation Findings
+${brief.key_findings.map((f) => `- ${f}`).join("\n")}
+
+---
+
+## Intervention Trade-Off Comparison (MCDA Scored)
+| Rank | Scenario | MCDA Score | Impact Reduction | Transit Delay |
+| :--- | :--- | :--- | :--- | :--- |
+${brief.comparative_summary
+  .map(
+    (s) =>
+      `| #${s.rank} | ${s.scenario_name} | ${s.composite_rank_score.toFixed(1)} | -${s.impact_reduction_pct.toFixed(1)}% | +${s.access_delay_minutes.toFixed(1)}m |`
+  )
+  .join("\n")}
+
+---
+
+## Assumptions & Boundaries
+${brief.assumptions_and_limitations.map((a) => `- ${a}`).join("\n")}
+
+---
+*Notice: SENTRIX is a human-in-the-loop decision-support system. All actions require incident commander validation.*
+`;
+
+    navigator.clipboard.writeText(md).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleExportJson = () => {
+    const blob = new Blob([JSON.stringify(brief, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sentrix-decision-brief-${brief.brief_id}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
@@ -162,11 +220,27 @@ export const DecisionBriefModal: React.FC<DecisionBriefModalProps> = ({
 
           <div className="flex items-center space-x-2">
             <button
+              onClick={handleCopyMarkdown}
+              className={`px-3 py-1.5 rounded border border-sentrix-border text-gray-200 flex items-center gap-1.5 transition ${
+                copied ? "bg-emerald-900/60 border-emerald-500 text-emerald-300" : "bg-sentrix-elevated hover:bg-sentrix-border"
+              }`}
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-blue-400" />}
+              <span>{copied ? "Copied Markdown!" : "Copy Markdown"}</span>
+            </button>
+            <button
+              onClick={handleExportJson}
+              className="px-3 py-1.5 rounded bg-sentrix-elevated hover:bg-sentrix-border border border-sentrix-border text-gray-200 flex items-center gap-1.5 transition"
+            >
+              <Download className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Export JSON</span>
+            </button>
+            <button
               onClick={() => window.print()}
-              className="px-3 py-1.5 rounded bg-sentrix-elevated hover:bg-sentrix-border text-gray-300 flex items-center gap-1.5 transition"
+              className="px-3 py-1.5 rounded bg-sentrix-elevated hover:bg-sentrix-border border border-sentrix-border text-gray-300 flex items-center gap-1.5 transition"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print Brief</span>
+              <span>Print</span>
             </button>
             <button
               onClick={onClose}

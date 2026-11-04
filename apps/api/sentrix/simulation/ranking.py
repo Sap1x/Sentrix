@@ -27,7 +27,8 @@ class InterventionRankingEngine:
         self,
         baseline_run: SimulationRunResult,
         candidate_runs: List[Tuple[InterventionScenario, SimulationRunResult]],
-        cost_map: Dict[str, float] = None
+        cost_map: Dict[str, float] = None,
+        custom_weights: Dict[str, float] = None
     ) -> List[ComparativeEvaluation]:
         if cost_map is None:
             cost_map = {
@@ -36,6 +37,13 @@ class InterventionRankingEngine:
                 "scen-substation-barrier": 4.5,
                 "scen-combined-mitigation": 7.0,
             }
+
+        active_weights = dict(self.weights)
+        if custom_weights:
+            # Normalize user-supplied weights to sum to 1.0
+            total_w = sum(custom_weights.values())
+            if total_w > 0:
+                active_weights = {k: v / total_w for k, v in custom_weights.items()}
 
         base_crit = baseline_run.final_metrics.critical_facilities_disrupted
         base_impact = max(1.0, baseline_run.final_metrics.total_weighted_impact)
@@ -88,14 +96,14 @@ class InterventionRankingEngine:
             # 6. Cost Efficiency Score
             cost_efficiency = max(0.2, 1.0 - (cost_index / 10.0))
 
-            # Weighted Composite Score (0 to 100)
+            # Weighted Composite Score (0 to 100) using active weights
             composite = (
-                self.weights["critical_asset_protection"] * crit_score +
-                self.weights["overall_impact_reduction"] * impact_score_norm +
-                self.weights["road_accessibility"] * road_score +
-                self.weights["access_delay_reduction"] * delay_score +
-                self.weights["execution_feasibility"] * feasibility_score +
-                self.weights["cost_efficiency"] * cost_efficiency
+                active_weights.get("critical_asset_protection", 0.35) * crit_score +
+                active_weights.get("overall_impact_reduction", 0.30) * impact_score_norm +
+                active_weights.get("road_accessibility", 0.15) * road_score +
+                active_weights.get("access_delay_reduction", 0.10) * delay_score +
+                active_weights.get("execution_feasibility", 0.05) * feasibility_score +
+                active_weights.get("cost_efficiency", 0.05) * cost_efficiency
             ) * 100.0
 
             # Determine Rationale

@@ -5,7 +5,7 @@ simulations, interventions, and AI model intelligence outputs.
 """
 from enum import Enum
 from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -86,7 +86,7 @@ class InfrastructureGraphData(BaseModel):
 class IncidentEvidence(BaseModel):
     id: str
     source: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     text_content: str
     sensor_reading_cm: Optional[float] = None
     confidence: float = 0.95
@@ -142,7 +142,7 @@ class SimulationRunResult(BaseModel):
     final_metrics: StepMetrics
     stabilization_reached: bool
     execution_duration_ms: float
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class InterventionAction(BaseModel):
@@ -184,7 +184,7 @@ class ComparativeEvaluation(BaseModel):
 class DecisionBrief(BaseModel):
     brief_id: str
     incident_id: str
-    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     recommended_scenario_id: str
     executive_summary: str
     key_findings: List[str]
@@ -218,5 +218,5 @@ class SystemHealthResponse(BaseModel):
     database_status: str
     uptime_seconds: float
     total_simulations_run: int
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

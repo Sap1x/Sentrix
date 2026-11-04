@@ -95,6 +95,20 @@ export const InfrastructureMap: React.FC<InfrastructureMapProps> = ({
   // Pixel radius corresponding to floodRadius in meters (~1700m = 900px => ~0.53 px/m)
   const epiPixelRadius = (floodRadius / 1700) * 800;
 
+  const delayMinutes = currentStepMetrics?.access_delay_proxy_minutes ?? 0;
+  const underpassState = getAssetState("junction-grand-underpass");
+  const isUnderpassSevered = underpassState === "FAILED" || delayMinutes > 5;
+
+  const directRoutePoints = useMemo(() => {
+    const ids = ["ems-station-04", "junction-4th-ave-bridge", "junction-grand-underpass", "junction-hospital-gate", "hospital-st-jude"];
+    return ids.map((id) => assetsMap.get(id)).filter((a): a is InfrastructureAsset => !!a).map((a) => project(a.lat, a.lon).join(",")).join(" ");
+  }, [assetsMap]);
+
+  const detourRoutePoints = useMemo(() => {
+    const ids = ["ems-station-04", "junction-4th-ave-bridge", "junction-market-st", "junction-northway-ridge", "junction-hospital-gate", "hospital-st-jude"];
+    return ids.map((id) => assetsMap.get(id)).filter((a): a is InfrastructureAsset => !!a).map((a) => project(a.lat, a.lon).join(",")).join(" ");
+  }, [assetsMap]);
+
   return (
     <div className="relative w-full h-full bg-[#090b10] overflow-hidden rounded border border-sentrix-border flex flex-col">
       {/* Top Map Overlay Controls */}
@@ -130,6 +144,25 @@ export const InfrastructureMap: React.FC<InfrastructureMapProps> = ({
         >
           <Activity className="w-3 h-3" /> Water Service
         </button>
+      </div>
+
+      {/* Dynamic Route & Incident Status Banner */}
+      <div className="absolute top-3 right-3 z-10">
+        {isUnderpassSevered ? (
+          <div className="px-3 py-1.5 rounded bg-red-950/90 border border-red-600/60 backdrop-blur text-xs font-mono text-red-200 flex items-center space-x-2 shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+            <span className="font-bold">TRANSIT DETOUR ACTIVE:</span>
+            <span className="text-gray-200">
+              Grand Underpass Inundated • Detour via Northway Ridge (+{delayMinutes > 0 ? delayMinutes.toFixed(1) : "24.5"}m delay)
+            </span>
+          </div>
+        ) : (
+          <div className="px-3 py-1.5 rounded bg-emerald-950/90 border border-emerald-600/60 backdrop-blur text-xs font-mono text-emerald-200 flex items-center space-x-2 shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="font-bold">PRIMARY TRANSIT NOMINAL:</span>
+            <span className="text-gray-200">Direct EMS Corridor Open (3.5m transit)</span>
+          </div>
+        )}
       </div>
 
       {/* Legend Overlay */}
@@ -258,6 +291,45 @@ export const InfrastructureMap: React.FC<InfrastructureMapProps> = ({
                 </g>
               );
             })}
+
+          {/* Dynamic Active Ambulance Trajectory Overlay */}
+          {isUnderpassSevered ? (
+            <g>
+              <polyline
+                points={detourRoutePoints}
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="4.5"
+                strokeDasharray="8,5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeOpacity="0.85"
+                className="animate-pulse"
+              />
+              <polyline
+                points={detourRoutePoints}
+                fill="none"
+                stroke="#34d399"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeOpacity="0.9"
+              />
+            </g>
+          ) : (
+            <g>
+              <polyline
+                points={directRoutePoints}
+                fill="none"
+                stroke="#38bdf8"
+                strokeWidth="4"
+                strokeDasharray="6,4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeOpacity="0.85"
+              />
+            </g>
+          )}
 
           {/* Power Grid Lines */}
           {showPowerLines &&

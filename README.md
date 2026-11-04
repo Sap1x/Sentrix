@@ -50,17 +50,18 @@ SENTRIX bridges the gap between high-level AI reasoning and classical infrastruc
 $$\text{Incident Intake} \longrightarrow \text{Infrastructure Digital Twin} \longrightarrow \text{Deterministic Cascade} \longrightarrow \text{Counterfactual Scenarios} \longrightarrow \text{MCDA Decision}$$
 
 ### Core Platform Capabilities
-1. **Multimodal Incident Understanding:** Ingests sensor data, river streamflow gauges, and paramedic dispatch radio transcripts using Meta's **Muse Spark Open** via Baseten.
-2. **Infrastructure Digital Twin:** Models physical connectivity (road links, bridges) and directed functional lifelines (power grid feeds, water pressure, communications).
-3. **Deterministic Cascading-Failure Engine:** Discrete-time simulation engine (implemented in NetworkX) executing hydraulic flood spread, component inundation, backup generator depletion, and Dijkstra shortest-path transit rerouting.
-4. **Counterfactual Intervention Analysis:** Evaluates 4 scenarios under identical initial conditions:
+1. **Multimodal Incident Understanding:** Ingests sensor data, river streamflow gauges, and paramedic dispatch radio transcripts using Meta's **Muse Spark Open** via Baseten with full chain-of-thought reasoning disclosure.
+2. **Infrastructure Digital Twin:** Models physical connectivity (road links, bridges) and directed functional lifelines (power grid feeds, water pressure, communications) across 14 assets and 16 lifelines.
+3. **Deterministic Cascading-Failure Engine:** Discrete-time simulation engine (implemented in NetworkX) executing hydraulic flood spread, component inundation, backup generator depletion, cycle-safe cascade propagation, and Dijkstra shortest-path transit rerouting.
+4. **Dynamic Parametric Calibration:** Operators can adjust initial flood surge depth (30–120cm), progression rate (5–30cm/hr), and surge radius (800–2500m) in real time to simulate evolving storm conditions.
+5. **Counterfactual Intervention Analysis:** Evaluates 4 scenarios under identical initial conditions:
    - **Baseline:** Unmitigated disaster progression.
    - **Intervention A (Road Diversion):** Perimeter sealing and activation of an elevated highland emergency transit corridor.
    - **Intervention B (Substation Protection):** Rapid deployment of Tiger Dam flood barriers and dewatering pumps.
    - **Intervention C (Combined Mitigation):** Synchronized multi-vector response.
-5. **Multi-Criteria Decision Analysis (MCDA) Ranking:** Ranks candidate interventions using transparent, documented objective weights across impact reduction, critical asset protection, road accessibility, access delay, feasibility, and cost proxy.
-6. **Executive Decision Brief:** Generates an audit-ready, timestamped operational brief requiring explicit human operator validation sign-off before real-world actions are authorized.
-7. **High-Density Command Center Interface:** Next.js 14 dashboard with interactive geospatial vector map, dependency flow matrix, scrubbable simulation playback timeline, and real-time telemetry.
+6. **Multi-Criteria Decision Analysis (MCDA) Ranking & Interactive Presets:** Ranks candidate interventions using transparent, documented objective weights across impact reduction, critical asset protection, road accessibility, access delay, feasibility, and cost proxy, with one-click operational presets (*Balanced*, *Life-Safety Priority*, *Rapid Transit*).
+7. **Geospatial Vector Map with Active Detour Overlay:** Dynamic MapLibre-ready SVG map displaying component flood thresholds, inundation extent, and illuminated active ambulance trajectories (direct corridor vs. Northway Ridge bypass).
+8. **Audit-Ready Executive Decision Brief:** Synthesizes verified simulation outcomes into an RFC-3339 timestamped operational brief with one-click Markdown copy, JSON export, and mandatory human operator validation sign-off.
 
 ---
 
@@ -243,15 +244,14 @@ See [`docs/api/OPENAPI_SPEC.md`](docs/api/OPENAPI_SPEC.md) for full request/resp
 
 ## 12. Automated Testing & Verification
 
-SENTRIX includes comprehensive test suites across backend and frontend:
+SENTRIX includes comprehensive test suites across backend and frontend (100% passing):
 
 ```bash
 # 1. Run live Meta Muse Spark Open smoke test
 source .venv/bin/activate
 python3 scripts/smoke_baseten.py
 
-# 2. Run backend pytest suite (13 unit and contract tests)
-export PYTHONPATH=apps/api
+# 2. Run backend pytest suite (17 unit, integration, and contract tests)
 pytest tests/unit -v
 
 # 3. Run frontend TypeScript strict check
@@ -261,6 +261,21 @@ npm run typecheck
 # 4. Build frontend production bundle
 npm run build
 ```
+
+Full test logs and empirical validation data are detailed in [`docs/VERIFICATION_REPORT.md`](docs/VERIFICATION_REPORT.md).
+
+---
+
+## 13. Comprehensive Engineering Documentation
+
+For deep technical evaluation, the repository includes full production-grade documentation:
+- 🏛️ [System Architecture & Specifications](docs/ARCHITECTURE.md) (`docs/ARCHITECTURE.md`)
+- 🔒 [Production Security Review & Threat Assessment](docs/SECURITY_REVIEW.md) (`docs/SECURITY_REVIEW.md`)
+- 🧪 [Verification, Test & Benchmark Report](docs/VERIFICATION_REPORT.md) (`docs/VERIFICATION_REPORT.md`)
+- 📋 [Engineering Audit & Remediation Matrix](docs/ENGINEERING_AUDIT.md) (`docs/ENGINEERING_AUDIT.md`)
+- ⏱️ [3-Minute Live Demonstration Script](docs/DEMO_SCRIPT.md) (`docs/DEMO_SCRIPT.md`)
+- 📡 [OpenAPI Specification](docs/api/OPENAPI_SPEC.md) (`docs/api/OPENAPI_SPEC.md`)
+- 🌊 [Simulation Methodology](docs/simulation/METHODOLOGY.md) (`docs/simulation/METHODOLOGY.md`)
 
 ---
 

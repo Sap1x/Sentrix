@@ -29,14 +29,14 @@ payload = {
     "messages": [
         {
             "role": "system",
-            "content": "You are the SENTRIX Infrastructure Intelligence Engine. Output JSON only."
+            "content": "You are the SENTRIX Infrastructure Intelligence Engine. Output JSON only: {\"primary_risk\": \"...\", \"impact\": \"...\"}"
         },
         {
             "role": "user",
             "content": "A flash flood has inundated Grand Avenue corridor by 65cm. In 20 words, identify the primary cascading risk to emergency medical transit."
         }
     ],
-    "max_tokens": 400,
+    "max_tokens": 2000,
     "temperature": 0.2
 }
 

@@ -6,7 +6,7 @@ Includes robust retries, defensive parsing, and deterministic fallback with prov
 import os
 import json
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 import httpx
 from dotenv import load_dotenv
 
@@ -106,7 +106,7 @@ Do not include markdown codeblocks or extra text. Output JSON only."""
 
         if self.is_configured():
             try:
-                result_json, reasoning = await self._call_baseten(prompt, max_tokens=1500)
+                result_json, reasoning = await self._call_baseten(prompt, max_tokens=2500)
                 if result_json:
                     return IntelligenceAnalysisResponse(
                         incident_id=incident.id,
@@ -222,7 +222,7 @@ Provide a JSON object with:
 
         if self.is_configured():
             try:
-                res_json, reasoning = await self._call_baseten(prompt, max_tokens=1500)
+                res_json, reasoning = await self._call_baseten(prompt, max_tokens=2500)
                 if res_json:
                     return {
                         "executive_summary": res_json.get("executive_summary", "Combined mitigation prevents systemic hospital isolation and power failure."),
@@ -269,7 +269,7 @@ Provide a JSON object with:
             "model_provenance": "VERIFIED_DETERMINISTIC_ENGINE"
         }
 
-    async def _call_baseten(self, prompt: str, max_tokens: int = 1500) -> Tuple[Optional[Dict[str, Any]], str]:
+    async def _call_baseten(self, prompt: str, max_tokens: int = 2500) -> Tuple[Optional[Dict[str, Any]], str]:
         """Direct, safe HTTP call to Baseten endpoint."""
         url = f"{self.base_url}/chat/completions"
         headers = {

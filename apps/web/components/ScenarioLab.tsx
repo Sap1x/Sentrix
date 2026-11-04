@@ -8,13 +8,60 @@ interface ScenarioLabProps {
   evaluations: ComparativeEvaluation[];
   selectedScenarioId: string;
   onSelectScenario: (scenarioId: string) => void;
+  activePreset?: string;
+  onSelectPreset?: (presetId: string, weights: Record<string, number>) => void;
 }
 
 export const ScenarioLab: React.FC<ScenarioLabProps> = ({
   evaluations,
   selectedScenarioId,
   onSelectScenario,
+  activePreset = "balanced",
+  onSelectPreset,
 }) => {
+  const PRESETS: Record<string, { name: string; icon: string; weights: Record<string, number>; desc: string }> = {
+    balanced: {
+      name: "Balanced Strategy",
+      icon: "⚖️",
+      desc: "Equalized trade-off across facility protection, access, and feasibility",
+      weights: {
+        critical_asset_protection: 0.35,
+        impact_reduction: 0.30,
+        road_accessibility: 0.15,
+        access_delay_reduction: 0.10,
+        execution_feasibility: 0.05,
+        cost_efficiency: 0.05,
+      },
+    },
+    lifesafety: {
+      name: "Life-Safety Priority",
+      icon: "🚑",
+      desc: "Prioritizes hospital continuity and acute trauma ambulance response time",
+      weights: {
+        critical_asset_protection: 0.50,
+        access_delay_reduction: 0.25,
+        impact_reduction: 0.15,
+        road_accessibility: 0.10,
+        execution_feasibility: 0.00,
+        cost_efficiency: 0.00,
+      },
+    },
+    transit: {
+      name: "Rapid Transit Focus",
+      icon: "⚡",
+      desc: "Optimizes municipal arterial flow and minimizes vehicle access delays",
+      weights: {
+        access_delay_reduction: 0.40,
+        road_accessibility: 0.30,
+        critical_asset_protection: 0.15,
+        impact_reduction: 0.10,
+        execution_feasibility: 0.05,
+        cost_efficiency: 0.00,
+      },
+    },
+  };
+
+  const currentWeights = PRESETS[activePreset]?.weights || PRESETS.balanced.weights;
   return (
     <div className="w-full h-full bg-[#090b10] p-4 overflow-y-auto space-y-4 rounded border border-sentrix-border font-mono text-xs select-none">
       <div className="flex items-center justify-between pb-2 border-b border-sentrix-border">
@@ -116,36 +163,72 @@ export const ScenarioLab: React.FC<ScenarioLabProps> = ({
         })}
       </div>
 
-      {/* MCDA Weight Transparency Box */}
-      <div className="p-3 rounded bg-sentrix-surface border border-sentrix-border space-y-2 text-[11px]">
-        <div className="text-gray-300 font-bold flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-          <span>MCDA Objective Scoring Weights (Documented & Transparent)</span>
+      {/* MCDA Weight Transparency & Presets Box */}
+      <div className="p-3.5 rounded bg-sentrix-surface border border-sentrix-border space-y-3 text-[11px]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-sentrix-border pb-2.5">
+          <div className="text-gray-300 font-bold flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-cyan-400" />
+            <span>MCDA Objective Scoring Presets (Interactive Tuning)</span>
+          </div>
+
+          <div className="flex items-center space-x-1.5">
+            {Object.entries(PRESETS).map(([key, preset]) => {
+              const isActive = activePreset === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => onSelectPreset && onSelectPreset(key, preset.weights)}
+                  className={`px-2.5 py-1 rounded text-[10px] font-mono border transition flex items-center space-x-1 ${
+                    isActive
+                      ? "bg-blue-600 text-white border-blue-400 font-bold shadow-sm"
+                      : "bg-sentrix-bg text-gray-400 hover:text-gray-200 border-sentrix-border"
+                  }`}
+                  title={preset.desc}
+                >
+                  <span>{preset.icon}</span>
+                  <span>{preset.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
         <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-[10px] text-gray-400">
-          <div className="p-1 rounded bg-sentrix-bg border border-sentrix-border">
+          <div className="p-1.5 rounded bg-sentrix-bg border border-sentrix-border">
             <span className="block text-gray-500">Critical Assets</span>
-            <span className="font-bold text-gray-200">35% weight</span>
+            <span className="font-bold text-gray-200">
+              {Math.round((currentWeights.critical_asset_protection || 0) * 100)}% weight
+            </span>
           </div>
-          <div className="p-1 rounded bg-sentrix-bg border border-sentrix-border">
+          <div className="p-1.5 rounded bg-sentrix-bg border border-sentrix-border">
             <span className="block text-gray-500">Impact Reduction</span>
-            <span className="font-bold text-gray-200">30% weight</span>
+            <span className="font-bold text-gray-200">
+              {Math.round((currentWeights.impact_reduction || 0) * 100)}% weight
+            </span>
           </div>
-          <div className="p-1 rounded bg-sentrix-bg border border-sentrix-border">
+          <div className="p-1.5 rounded bg-sentrix-bg border border-sentrix-border">
             <span className="block text-gray-500">Road Accessibility</span>
-            <span className="font-bold text-gray-200">15% weight</span>
+            <span className="font-bold text-gray-200">
+              {Math.round((currentWeights.road_accessibility || 0) * 100)}% weight
+            </span>
           </div>
-          <div className="p-1 rounded bg-sentrix-bg border border-sentrix-border">
+          <div className="p-1.5 rounded bg-sentrix-bg border border-sentrix-border">
             <span className="block text-gray-500">Delay Minimization</span>
-            <span className="font-bold text-gray-200">10% weight</span>
+            <span className="font-bold text-gray-200">
+              {Math.round((currentWeights.access_delay_reduction || 0) * 100)}% weight
+            </span>
           </div>
-          <div className="p-1 rounded bg-sentrix-bg border border-sentrix-border">
+          <div className="p-1.5 rounded bg-sentrix-bg border border-sentrix-border">
             <span className="block text-gray-500">Feasibility</span>
-            <span className="font-bold text-gray-200">5% weight</span>
+            <span className="font-bold text-gray-200">
+              {Math.round((currentWeights.execution_feasibility || 0) * 100)}% weight
+            </span>
           </div>
-          <div className="p-1 rounded bg-sentrix-bg border border-sentrix-border">
+          <div className="p-1.5 rounded bg-sentrix-bg border border-sentrix-border">
             <span className="block text-gray-500">Resource Cost</span>
-            <span className="font-bold text-gray-200">5% weight</span>
+            <span className="font-bold text-gray-200">
+              {Math.round((currentWeights.cost_efficiency || 0) * 100)}% weight
+            </span>
           </div>
         </div>
       </div>
